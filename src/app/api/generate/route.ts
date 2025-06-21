@@ -18,19 +18,10 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const modelCosts = {
-  'gpt-4o': 1,
-  'claude-3-sonnet-20240229': 2,
-  'claude-3-opus-20240229': 3,
-};
-
-type Model = keyof typeof modelCosts;
-
 export async function POST(req: NextRequest) {
   const { prompt, walletAddress, model = 'gpt-4o' } = await req.json();
-  const modelKey = model as Model;
 
-  if (!prompt || !walletAddress || !modelKey || !modelCosts[modelKey]) {
+  if (!prompt || !walletAddress) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
@@ -45,7 +36,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'User not found or error fetching user' }, { status: 404 });
   }
 
-  const creditsRequired = modelCosts[modelKey];
+  const creditsRequired = 1; // Always deduct 1 credit per request
   if (user.credits < creditsRequired) {
     return NextResponse.json({ error: 'Insufficient credits' }, { status: 402 });
   }
@@ -53,6 +44,8 @@ export async function POST(req: NextRequest) {
   // 2. Generate content with the selected AI model
   let completion;
   try {
+    const modelKey = model as 'gpt-4o' | 'claude-3-sonnet-20240229' | 'claude-3-opus-20240229';
+
     if (modelKey.startsWith('gpt')) {
       const response = await openai.chat.completions.create({
         model: modelKey,
