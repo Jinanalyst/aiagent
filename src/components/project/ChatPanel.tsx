@@ -2,9 +2,10 @@
 import { useState, useEffect, useRef } from "react";
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Send, Paperclip, Bot, User, Terminal, ChevronUp, CircleX, CheckCircle, Square, FileIcon, Loader2, Code, Zap } from "lucide-react"
+import { Send, Paperclip, Bot, User, Terminal, ChevronUp, CircleX, CheckCircle, Square, FileIcon, Loader2, Code, Zap, Brain, GitBranch } from "lucide-react"
 import { Message } from 'ai/react';
 import { GeneratedFile } from "@/types";
+import { CodeDiffViewer } from './CodeDiffViewer';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -27,19 +28,27 @@ const modelDisplayNames: { [key: string]: string } = {
 };
 
 interface ChatEntry {
-    type: 'message' | 'log' | 'progress';
+    type: 'message' | 'log' | 'progress' | 'thinking' | 'diff';
     content: string;
     author?: 'AI' | 'user';
     timestamp: string;
     fileName?: string;
     progress?: number;
     isTyping?: boolean;
+    thinkingTime?: number;
+    oldContent?: string;
+    newContent?: string;
+    generatedLines?: number;
+    isGenerating?: boolean;
 }
 
 interface ChatPanelProps {
     messages: Message[];
     logs: string[];
     files: GeneratedFile[];
+    originalFiles: Map<string, string>;
+    currentGeneratingFile?: string;
+    generationProgress?: number;
     isLoading: boolean;
     onSend: (message: string) => void;
     onAcceptAll: () => void;
@@ -52,8 +61,8 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({
-    messages, logs, files, isLoading, onSend,
-    onAcceptAll, onRejectAll, onModelChange, selectedModel,
+    messages, logs, files, originalFiles, currentGeneratingFile, generationProgress = 0,
+    isLoading, onSend, onAcceptAll, onRejectAll, onModelChange, selectedModel,
     isAutoMode, onAutoModeChange, onCancel
 }: ChatPanelProps) {
     const [input, setInput] = useState("");
@@ -61,6 +70,8 @@ export function ChatPanel({
     const [combinedFeed, setCombinedFeed] = useState<ChatEntry[]>([]);
     const [typingText, setTypingText] = useState("");
     const [currentProgress, setCurrentProgress] = useState(0);
+    const [thinkingEntries, setThinkingEntries] = useState<ChatEntry[]>([]);
+    const [diffEntries, setDiffEntries] = useState<ChatEntry[]>([]);
     const [progressSteps] = useState([
         { step: 1, label: "Analyzing requirements", progress: 20 },
         { step: 2, label: "Planning file structure", progress: 40 },
@@ -69,23 +80,76 @@ export function ChatPanel({
         { step: 5, label: "Finalizing files", progress: 100 }
     ]);
 
-    // Simulate progress when loading
+    // Simulate thinking process and progress when loading
     useEffect(() => {
         if (isLoading) {
             setCurrentProgress(0);
+            setThinkingEntries([]);
+            setDiffEntries([]);
+            
+            // Add thinking entries with realistic delays
+            const thinkingSteps = [
+                { time: 1000, content: "Analyzing your request..." },
+                { time: 2000, content: "Planning code structure..." },
+                { time: 1500, content: "Generating modifications..." },
+            ];
+            
+            let totalDelay = 0;
+            thinkingSteps.forEach((step, index) => {
+                totalDelay += step.time;
+                setTimeout(() => {
+                    setThinkingEntries(prev => [...prev, {
+                        type: 'thinking',
+                        content: step.content,
+                        timestamp: new Date().toISOString(),
+                        thinkingTime: step.time / 1000,
+                        author: 'AI'
+                    }]);
+                }, totalDelay);
+            });
+            
             const progressInterval = setInterval(() => {
                 setCurrentProgress(prev => {
                     if (prev >= 100) {
                         clearInterval(progressInterval);
                         return 100;
                     }
-                    return prev + 2;
+                    return prev + 1;
                 });
-            }, 100);
+            }, 150);
 
             return () => clearInterval(progressInterval);
+        } else {
+            setThinkingEntries([]);
         }
     }, [isLoading]);
+
+    // Create diff entries for file generation
+    useEffect(() => {
+        if (currentGeneratingFile && isLoading) {
+            const file = files.find(f => f.path === currentGeneratingFile);
+            const originalContent = originalFiles.get(currentGeneratingFile) || '';
+            
+            if (file) {
+                const diffEntry: ChatEntry = {
+                    type: 'diff',
+                    content: `Modifying ${currentGeneratingFile}`,
+                    timestamp: new Date().toISOString(),
+                    fileName: currentGeneratingFile,
+                    oldContent: originalContent,
+                    newContent: file.content,
+                    generatedLines: Math.floor((generationProgress || 0) / 100 * file.content.split('\n').length),
+                    isGenerating: true,
+                    author: 'AI'
+                };
+                
+                setDiffEntries(prev => {
+                    const filtered = prev.filter(entry => entry.fileName !== currentGeneratingFile);
+                    return [...filtered, diffEntry];
+                });
+            }
+        }
+    }, [currentGeneratingFile, generationProgress, files, originalFiles, isLoading]);
 
     // Typing effect for AI responses
     useEffect(() => {
@@ -148,11 +212,11 @@ export function ChatPanel({
                 progress: file.status === 'completed' ? 100 : currentProgress
             }));
 
-        const sortedFeed = [...messageEntries, ...logEntries, ...progressEntries]
+        const sortedFeed = [...messageEntries, ...logEntries, ...progressEntries, ...thinkingEntries, ...diffEntries]
             .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
         setCombinedFeed(sortedFeed);
 
-    }, [messages, logs, files, currentProgress, isLoading]);
+    }, [messages, logs, files, currentProgress, isLoading, thinkingEntries, diffEntries]);
 
 
     const scrollToBottom = () => {
@@ -183,6 +247,12 @@ export function ChatPanel({
         }
         if (entry.type === 'log') {
             return <Terminal className="h-5 w-5 text-gray-500" />;
+        }
+        if (entry.type === 'thinking') {
+            return <Brain className="h-5 w-5 text-purple-500 animate-pulse" />;
+        }
+        if (entry.type === 'diff') {
+            return <GitBranch className="h-5 w-5 text-blue-500" />;
         }
         return entry.author === 'AI' ? <Bot className="h-5 w-5 text-gray-500" /> : <User className="h-5 w-5 text-gray-500" />;
     };
@@ -217,6 +287,10 @@ export function ChatPanel({
                                 ? 'bg-gray-900 text-gray-200' 
                                 : entry.type === 'progress'
                                 ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
+                                : entry.type === 'thinking'
+                                ? 'bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800'
+                                : entry.type === 'diff'
+                                ? 'bg-gray-900 p-0 border border-gray-700'
                                 : 'bg-gray-50 dark:bg-gray-700 border dark:border-gray-600'
                         }`}>
                             {entry.type === 'progress' ? (
@@ -226,6 +300,36 @@ export function ChatPanel({
                                         <span className="font-medium text-sm">{entry.content}</span>
                                     </div>
                                     {entry.progress !== undefined && renderProgressBar(entry.progress)}
+                                </div>
+                            ) : entry.type === 'thinking' ? (
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-medium text-sm text-purple-700 dark:text-purple-300">
+                                            {entry.content}
+                                        </span>
+                                    </div>
+                                    {entry.thinkingTime && (
+                                        <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                                            Thought for {entry.thinkingTime} second{entry.thinkingTime !== 1 ? 's' : ''}
+                                        </p>
+                                    )}
+                                </div>
+                            ) : entry.type === 'diff' ? (
+                                <div className="p-0">
+                                    <div className="bg-gray-800 px-4 py-2 border-b border-gray-700">
+                                        <span className="text-sm font-medium text-white">
+                                            Saving changes to {entry.fileName}
+                                        </span>
+                                    </div>
+                                    {entry.oldContent !== undefined && entry.newContent !== undefined && (
+                                        <CodeDiffViewer
+                                            fileName={entry.fileName || 'Unknown'}
+                                            oldContent={entry.oldContent}
+                                            newContent={entry.newContent}
+                                            isGenerating={entry.isGenerating}
+                                            generatedLines={entry.generatedLines}
+                                        />
+                                    )}
                                 </div>
                             ) : entry.isTyping ? (
                                 <p className="text-sm text-gray-800 dark:text-gray-200">

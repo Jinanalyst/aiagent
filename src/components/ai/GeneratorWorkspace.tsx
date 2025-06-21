@@ -74,6 +74,8 @@ export function GeneratorWorkspace({ prompt: initialPrompt, initialProject }: Ge
     const [showChangeManager, setShowChangeManager] = useState(false);
     const [showChangesPopup, setShowChangesPopup] = useState(false);
     const [originalFiles, setOriginalFiles] = useState<Map<string, string>>(new Map());
+    const [currentGeneratingFile, setCurrentGeneratingFile] = useState<string>('');
+    const [generationProgress, setGenerationProgress] = useState(0);
 
     const addLog = (message: string) => {
         const timestamp = new Date().toLocaleTimeString();
@@ -1071,6 +1073,10 @@ module.exports = router;`
                         const file = filesToModify[i];
                         const isActiveFile = activeFile && file.path === activeFile.path;
                         
+                        // Set current generating file for real-time progress
+                        setCurrentGeneratingFile(file.path);
+                        setGenerationProgress(0);
+                        
                         addLog(`Modifying ${file.path}...`);
                         
                         let modifiedContent;
@@ -1128,6 +1134,13 @@ aiEnhancement.init();`;
                             modifiedContent = file.content + `\n\n# AI Enhancement\n\nAdded functionality based on user request: "${message}"\n\nTimestamp: ${new Date().toISOString()}`;
                         }
                         
+                        // Simulate realistic generation progress
+                        const progressSteps = [25, 50, 75, 100];
+                        for (const progress of progressSteps) {
+                            setGenerationProgress(progress);
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                        }
+                        
                         // Stream updates for the active file
                         if (isActiveFile) {
                             await streamCodeUpdate(modifiedContent);
@@ -1149,8 +1162,12 @@ aiEnhancement.init();`;
                             setActiveCode(modifiedContent);
                         }
                         
+                        // Clear current generating file
+                        setCurrentGeneratingFile('');
+                        setGenerationProgress(0);
+                        
                         // Delay between file modifications
-                        await new Promise(resolve => setTimeout(resolve, 800));
+                        await new Promise(resolve => setTimeout(resolve, 1000));
                     }
                 }
                 
@@ -2019,6 +2036,9 @@ MIT License - see LICENSE file for details`,
                             messages={messages}
                             logs={logs}
                             files={files}
+                            originalFiles={originalFiles}
+                            currentGeneratingFile={currentGeneratingFile}
+                            generationProgress={generationProgress}
                             isLoading={isGenerating}
                             onSend={handleSend}
                             onAcceptAll={handleAcceptAll}
