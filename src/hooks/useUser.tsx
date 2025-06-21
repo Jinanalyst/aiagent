@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
 
 export type Plan = 'FREE' | 'PRO' | 'PREMIUM';
 
@@ -92,11 +91,9 @@ export const UserProvider = ({ children, walletPublicKey }: { children: ReactNod
         const walletAddress = walletPublicKey;
         const storedUsers = JSON.parse(localStorage.getItem('users') || '{}');
         let currentUser = storedUsers[walletAddress];
-        let isNewUser = false;
 
         if (!currentUser) {
           // Create a new user if one doesn't exist
-          isNewUser = true;
           currentUser = {
             walletAddress: walletAddress,
             plan: 'FREE',
@@ -144,8 +141,8 @@ export const UserProvider = ({ children, walletPublicKey }: { children: ReactNod
             console.log('Subscription expired, downgrading to FREE plan');
             currentUser.plan = 'FREE';
             currentUser.credits = 5;
-                         currentUser.subscriptionExpiry = undefined;
-             currentUser.lastCreditReset = undefined;
+            currentUser.subscriptionExpiry = undefined;
+            currentUser.lastCreditReset = undefined;
             currentUser.renewalReminded = false;
             
             storedUsers[walletAddress] = currentUser;
@@ -237,7 +234,7 @@ export const UserProvider = ({ children, walletPublicKey }: { children: ReactNod
           lastCreditReset = now.toISOString();
         }
         
-        let newCredits = getCreditAllocation(newPlan);
+        const newCredits = getCreditAllocation(newPlan);
         
         // Handle referral bonuses for Pro upgrades
         if (newPlan === 'PRO') {

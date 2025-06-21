@@ -137,7 +137,7 @@ export function GeneratorWorkspace({ prompt: initialPrompt, model, initialProjec
     };
 
     const createPlan = async (prompt: string) => {
-        setIsLoading(true);
+        setIsGenerating(true);
         addLog(`Starting new project generation for prompt: "${prompt}"`, 'INFO');
         
         try {
@@ -215,7 +215,7 @@ export function GeneratorWorkspace({ prompt: initialPrompt, model, initialProjec
             ]);
             addLog(errorMessage, 'ERROR');
         } finally {
-            setIsLoading(false);
+            setIsGenerating(false);
         }
     };
 

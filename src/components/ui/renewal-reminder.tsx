@@ -59,9 +59,10 @@ export function RenewalReminder() {
       renewSubscription(user.plan);
       alert('Subscription renewed successfully!');
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Renewal failed:', error);
-      alert(`Renewal failed: ${error.message || 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Renewal failed: ${errorMessage}`);
     } finally {
       setIsRenewing(false);
     }

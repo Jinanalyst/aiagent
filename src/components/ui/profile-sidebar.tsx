@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useProjects } from '@/hooks/useProjects';
 import { useUser } from '@/hooks/useUser';
@@ -9,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
   MessageSquare, 
-  Plus, 
   Search, 
   Settings, 
   HelpCircle, 
@@ -17,7 +15,6 @@ import {
   User, 
   LogOut,
   FileText,
-  Calendar,
   Coins
 } from 'lucide-react';
 import { format, isToday, isYesterday, isThisWeek, isThisMonth } from 'date-fns';
