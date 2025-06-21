@@ -152,7 +152,7 @@ export function WorkspacePanel({
             </div>
 
             {/* File Tree */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
               <FileExplorer 
                 files={files} 
                 onFileSelect={handleFileSelect}
@@ -197,13 +197,15 @@ export function WorkspacePanel({
             )}
 
             {/* Editor Content */}
-            <div className="flex-1 relative">
+            <div className="flex-1 relative overflow-hidden">
               {activeTabContent ? (
-                <CodeEditor
-                  code={activeTabContent.content}
-                  setCode={handleCodeChange}
-                  readOnly={!onCodeChange}
-                />
+                <div className="h-full w-full">
+                  <CodeEditor
+                    code={activeTabContent.content}
+                    setCode={handleCodeChange}
+                    readOnly={!onCodeChange}
+                  />
+                </div>
               ) : (
                 <div className="h-full flex items-center justify-center text-gray-400">
                   <div className="text-center">
