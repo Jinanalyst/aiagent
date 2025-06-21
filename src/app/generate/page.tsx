@@ -13,8 +13,10 @@ import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 
 const allModels = {
   'gpt-4o': { name: 'GPT-4o', cost: 1, plans: ['FREE', 'PRO', 'PREMIUM'] },
-  'claude-3-sonnet-20240229': { name: 'Claude 3 Sonnet', cost: 1, plans: ['FREE', 'PRO', 'PREMIUM'] },
-  'claude-3-opus-20240229': { name: 'Claude 3 Opus', cost: 1, plans: ['PREMIUM'] },
+  'claude-3-opus-20240229': { name: 'Claude 3 Opus', cost: 3, plans: ['PRO', 'PREMIUM'] },
+  'claude-3.5-sonnet-20240620': { name: 'Claude 3.5 Sonnet', cost: 2, plans: ['FREE', 'PRO', 'PREMIUM'] },
+  'claude-3-5-sonnet-20241022': { name: 'Claude 3.5 Sonnet (New)', cost: 2, plans: ['FREE', 'PRO', 'PREMIUM'] },
+  'claude-3-5-haiku-20241022': { name: 'Claude 3.5 Haiku', cost: 1, plans: ['FREE', 'PRO', 'PREMIUM'] },
 };
 
 export default function GeneratePage() {
@@ -84,9 +86,9 @@ export default function GeneratePage() {
                                 <SelectValue placeholder="Select model" />
                             </SelectTrigger>
                             <SelectContent>
-                                {availableModels.map(([key, { name }]) => (
+                                {availableModels.map(([key, { name, cost }]) => (
                                     <SelectItem key={key} value={key}>
-                                        {name} (1 credit)
+                                        {name} ({cost} credit{cost > 1 ? 's' : ''})
                                     </SelectItem>
                                 ))}
                             </SelectContent>

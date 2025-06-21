@@ -14,15 +14,27 @@ import {
 } from "@/components/ui/dialog"
 
 export const WalletConnect: FC = () => {
-  const { publicKey, connected, disconnect, wallets, select, connecting } = useWallet();
+  const { publicKey, connected, disconnect, wallets, select, connecting, connect } = useWallet();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleWalletSelect = useCallback((walletName: Wallet['adapter']['name']) => {
-    if (walletName) {
+  const handleWalletSelect = useCallback(async (walletName: Wallet['adapter']['name']) => {
+    try {
+      if (walletName) {
         select(walletName);
+        // Give a small delay for the wallet to be selected
+        setTimeout(async () => {
+          try {
+            await connect();
+          } catch (error) {
+            console.error('Failed to connect wallet:', error);
+          }
+        }, 100);
+      }
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('Error selecting wallet:', error);
     }
-    setIsModalOpen(false);
-  }, [select]);
+  }, [select, connect]);
 
   if (connected && publicKey) {
     return (
