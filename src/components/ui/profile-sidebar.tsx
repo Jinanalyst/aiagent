@@ -30,7 +30,7 @@ interface ProfileSidebarProps {
 
 export function ProfileSidebar({ className = '' }: ProfileSidebarProps) {
   const { projects, loading } = useProjects();
-  const { user } = useUser();
+  const { user, subscriptionStatus } = useUser();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [isHovered, setIsHovered] = useState(false);
@@ -257,7 +257,15 @@ export function ProfileSidebar({ className = '' }: ProfileSidebarProps) {
                       {user.walletAddress.slice(0, 8)}...{user.walletAddress.slice(-4)}
                     </p>
                     <p className="text-xs text-green-400">
-                      Pro • {user.credits} credits
+                      {user.plan} • {user.plan === 'PREMIUM' ? 'Unlimited' : user.credits} credits
+                      {subscriptionStatus && !subscriptionStatus.isExpired && (
+                        <span className="text-yellow-400 ml-1">
+                          • {subscriptionStatus.daysUntilExpiry}d left
+                        </span>
+                      )}
+                      {subscriptionStatus?.isExpired && (
+                        <span className="text-red-400 ml-1">• Expired</span>
+                      )}
                     </p>
                   </div>
                 </div>

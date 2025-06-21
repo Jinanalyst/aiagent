@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useUser } from '@/hooks/useUser';
+import { SubscriptionStatus } from '@/components/ui/subscription-status';
 import { 
   X, 
   Settings, 
@@ -355,10 +356,13 @@ Use icons from lucide-react for logos.`,
                 </div>
 
                 {user && (
-                  <div className="bg-gray-800 rounded-lg p-4">
-                    <h3 className="text-lg font-medium text-white mb-2">Current Balance</h3>
-                    <p className="text-2xl font-bold text-green-400">{user.credits} tokens</p>
-                    <p className="text-sm text-gray-400">Plan: {user.plan}</p>
+                  <div className="space-y-4">
+                    <div className="bg-gray-800 rounded-lg p-4">
+                      <h3 className="text-lg font-medium text-white mb-2">Current Balance</h3>
+                      <p className="text-2xl font-bold text-green-400">{user.credits} tokens</p>
+                      <p className="text-sm text-gray-400">Plan: {user.plan}</p>
+                    </div>
+                    <SubscriptionStatus />
                   </div>
                 )}
               </div>

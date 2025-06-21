@@ -11,6 +11,7 @@ import { useUser } from '@/hooks/useUser';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { ProfileSidebar } from '@/components/ui/profile-sidebar';
+import { RenewalReminder } from '@/components/ui/renewal-reminder';
 
 const allModels = {
   'gpt-4o': { name: 'GPT-4o', cost: 1, plans: ['FREE', 'PRO', 'PREMIUM'] },
@@ -54,6 +55,9 @@ export default function GeneratePage() {
             <ProfileSidebar />
             <div className="flex flex-col min-h-screen">
                 <Navigation />
+                <div className="container mx-auto p-4">
+                    <RenewalReminder />
+                </div>
                 <main className="flex-1 flex flex-col items-center justify-center text-center p-4">
                     <h1 className="text-5xl font-bold mb-8">Ask AI Anything</h1>
                     

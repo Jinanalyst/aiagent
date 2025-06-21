@@ -8,6 +8,7 @@ import { Project } from "@/types";
 import { format } from 'date-fns';
 import { Navigation } from "@/components/ui/navigation";
 import { ProfileSidebar } from "@/components/ui/profile-sidebar";
+import { RenewalReminder } from "@/components/ui/renewal-reminder";
 
 function ProjectCard({ project }: { project: Project }) {
     return (
@@ -33,6 +34,7 @@ export default function DashboardPage() {
             <div className="flex flex-col min-h-screen bg-gray-100">
                 <Navigation />
                 <div className="flex-1 container mx-auto p-8">
+                    <RenewalReminder />
                     <header className="flex justify-between items-center mb-8">
                         <h1 className="text-3xl font-bold">Dashboard</h1>
                         <Link href="/generate" passHref>

@@ -165,7 +165,9 @@ export default function PricingPage() {
                   <span className="text-4xl font-bold">
                     {tier.solPrice} SOL
                   </span>
-                  <span className="text-muted-foreground">/ month</span>
+                  <span className="text-muted-foreground">
+                    {tier.name === 'FREE' ? '' : '/ month'}
+                  </span>
                 </div>
                 <ul className="space-y-3">
                   {tier.features.map((feature) => (

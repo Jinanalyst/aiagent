@@ -11,8 +11,8 @@ export const connection = new Connection(SOLANA_RPC_URL, 'confirmed');
 // Credit pricing in SOL (adjust as needed)
 export const CREDIT_PRICES = {
   free: 0,
-  pro: 0.1, // 0.1 SOL for Pro plan
-  premium: 0.25, // 0.25 SOL for Premium plan
+  pro: 0.5, // 0.5 SOL for Pro plan
+  premium: 1.0, // 1.0 SOL for Premium plan
   credits_10: 0.05, // 0.05 SOL for 10 credits
   credits_50: 0.2, // 0.2 SOL for 50 credits
   credits_100: 0.35, // 0.35 SOL for 100 credits

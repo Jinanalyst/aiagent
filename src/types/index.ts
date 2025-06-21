@@ -1,9 +1,14 @@
+export type Plan = 'FREE' | 'PRO' | 'PREMIUM';
+
 export interface User {
   id: string;
   walletAddress: string;
   email?: string;
   credits: number;
-  plan: 'free' | 'pro' | 'premium';
+  plan: Plan;
+  subscriptionExpiry?: string;
+  lastCreditReset?: string;
+  renewalReminded?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -65,21 +70,46 @@ export type Project = {
   id: string;
   userId: string;
   name: string;
-  description?: string;
-  createdAt: string;
-  files: GeneratedFile[];
-  integrations?: {
-    github?: {
-      username: string;
-      repo: string;
-    },
-    supabase?: {
-      projectUrl: string;
-      anonKey: string;
-    }
-  },
-  labs?: {
-    githubBranchSwitching?: boolean;
-    newMobileLayout?: boolean;
-  }
-}; 
+  description: string;
+  type: 'website' | 'component' | 'app';
+  files: ProjectFile[];
+  createdAt: Date;
+  updatedAt: Date;
+  teamId?: string;
+};
+
+export interface Team {
+  id: string;
+  name: string;
+  plan: Plan;
+  members: TeamMember[];
+  credits: number;
+  subscriptionExpiry?: string;
+  lastCreditReset?: string;
+  renewalReminded?: boolean;
+  inviteCode: string;
+  createdAt: Date;
+}
+
+export interface TeamMember {
+  walletAddress: string;
+  role: 'owner' | 'admin' | 'member';
+  joinedAt: Date;
+}
+
+export interface ProjectFile {
+  id: string;
+  name: string;
+  content: string;
+  type: 'html' | 'css' | 'js' | 'ts' | 'jsx' | 'tsx' | 'json' | 'md';
+  status: 'pending' | 'generating' | 'completed' | 'error';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface SubscriptionStatus {
+  isExpired: boolean;
+  daysUntilExpiry: number;
+  needsRenewal: boolean;
+  showRenewalReminder: boolean;
+} 
