@@ -15,7 +15,6 @@ type PaymentStatus = "processing" | "success" | "error";
 
 const tiers: {
   name: Plan;
-  price: string;
   solPrice: number;
   description: string;
   features: string[];
@@ -24,7 +23,6 @@ const tiers: {
 }[] = [
   {
     name: "FREE",
-    price: "$0",
     solPrice: 0,
     description: "For individuals and small projects.",
     features: ["5 credits/month", "Basic component generation", "Community support"],
@@ -32,7 +30,6 @@ const tiers: {
   },
   {
     name: "PRO",
-    price: "$20",
     solPrice: 0.5,
     description: "For professional developers and teams.",
     features: ["100 credits/month", "Advanced component generation", "AI code completion", "Priority email support"],
@@ -41,7 +38,6 @@ const tiers: {
   },
   {
     name: "PREMIUM",
-    price: "$50",
     solPrice: 1,
     description: "For large-scale applications and businesses.",
     features: ["Unlimited credits", "Team collaboration features", "Dedicated support & onboarding", "Access to beta features"],
@@ -167,12 +163,9 @@ export default function PricingPage() {
               <CardContent className="flex-1">
                 <div className="mb-6">
                   <span className="text-4xl font-bold">
-                    {tier.price}
+                    {tier.solPrice} SOL
                   </span>
                   <span className="text-muted-foreground">/ month</span>
-                </div>
-                <div className="mb-6 text-sm text-muted-foreground">
-                  or ~{tier.solPrice} SOL / month
                 </div>
                 <ul className="space-y-3">
                   {tier.features.map((feature) => (
