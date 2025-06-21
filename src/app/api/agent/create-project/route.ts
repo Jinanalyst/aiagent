@@ -42,7 +42,7 @@ Now, generate the complete and detailed plan for the user's prompt.
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt } = await req.json();
+    const { prompt, model = 'gpt-4o' } = await req.json();
 
     if (!prompt) {
       return NextResponse.json({ 
@@ -59,8 +59,8 @@ export async function POST(req: NextRequest) {
     }
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [{ role: 'user', content: planningPrompt.replace('{prompt}', prompt) }],
+      model: model,
+      messages: [{ role: 'system', content: planningPrompt }, { role: 'user', content: prompt }],
       response_format: { type: 'json_object' },
       temperature: 0.1, // Lower temperature for more consistent planning
       max_tokens: 4000, // Ensure we have enough tokens for complex plans

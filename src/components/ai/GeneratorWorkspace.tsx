@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import JSZip from "jszip";
 import { saveAs } from 'file-saver';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
@@ -48,6 +48,10 @@ export function GeneratorWorkspace({ prompt: initialPrompt, model, initialProjec
     const [deploymentStatus, setDeploymentStatus] = useState('');
     const [logs, setLogs] =useState<string[]>([]);
     const [activeCode, setActiveCode] = useState<string>('');
+    const effectRan = useRef(false);
+    const [selectedModel, setSelectedModel] = useState('gpt-4o');
+    const [isAutoMode, setIsAutoMode] = useState(true);
+    const abortControllerRef = useRef<AbortController | null>(null);
 
 
     useEffect(() => {
@@ -261,15 +265,101 @@ export function GeneratorWorkspace({ prompt: initialPrompt, model, initialProjec
         }
     };
 
+    const handleAcceptAll = () => {
+        try {
+            const savedProject = addProject({ name: projectName, files });
+            addLog(`Project changes saved for "${savedProject.name}"`, 'SUCCESS');
+            setMessages(prev => [...prev, {id: 'changes-saved', role: 'assistant', content: "I've saved the latest changes."}]);
+        } catch (error) {
+            addLog(`Error saving project: ${(error as Error).message}`, 'ERROR');
+            console.error("Error saving project:", error);
+        }
+    };
+    
+    const handleRejectAll = () => {
+        if (initialProject) {
+            setFiles(initialProject.files);
+            addLog('Changes have been rejected and reverted.', 'INFO');
+            setMessages(prev => [...prev, {id: 'changes-reverted', role: 'assistant', content: "I've reverted the changes to the last saved version."}]);
+        } else {
+            addLog('Cannot reject changes, no initial project state found.', 'ERROR');
+        }
+    };
+
+    const handleCancel = () => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            addLog('Request cancelled by user.', 'INFO');
+            setIsLoading(false);
+        }
+    };
+
+    const handleModification = async (chatInput: string) => {
+        setIsLoading(true);
+        addLog(`Handling modification request: "${chatInput}"`, 'INFO');
+    
+        abortControllerRef.current = new AbortController();
+        const { signal } = abortControllerRef.current;
+
+        const currentFiles = files.map(f => ({ path: f.path, content: f.content }));
+    
+        try {
+            const response = await fetch('/api/agent/modify-project', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    files: currentFiles,
+                    prompt: chatInput,
+                    model: selectedModel,
+                }),
+                signal,
+            });
+    
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to apply modification');
+            }
+    
+            const result = await response.json();
+    
+            setFiles(prevFiles => {
+                const updatedFiles = [...prevFiles];
+                result.files.forEach((newFile: GeneratedFile) => {
+                    const existingFileIndex = updatedFiles.findIndex(f => f.path === newFile.path);
+                    if (existingFileIndex !== -1) {
+                        updatedFiles[existingFileIndex] = { ...updatedFiles[existingFileIndex], content: newFile.content, status: 'completed' };
+                    } else {
+                        updatedFiles.push({ ...newFile, status: 'completed' });
+                    }
+                });
+                return updatedFiles;
+            });
+    
+            addLog('Successfully applied modifications.', 'SUCCESS');
+            setMessages(prev => [...prev, { id: `ai-response-${Date.now()}`, role: 'assistant', content: "I've applied the changes. Take a look at the updated files."}]);
+    
+        } catch (error: any) {
+            if (error.name === 'AbortError') {
+                setMessages(prev => [...prev, {id: 'aborted', role: 'assistant', content: 'The request was cancelled.'}]);
+            } else {
+                console.error('Modification failed:', error);
+                addLog(`Modification failed: ${(error as Error).message}`, 'ERROR');
+                setMessages(prev => [...prev, { id: `ai-error-${Date.now()}`, role: 'assistant', content: `Sorry, I couldn't apply the changes. ${(error as Error).message}` }]);
+            }
+        } finally {
+            setIsLoading(false);
+            abortControllerRef.current = null;
+        }
+    };
+    
+
     const handleSend = async (chatInput: string) => {
         if (!chatInput.trim()) return;
 
         setMessages(prev => [...prev, { id: `user-${Date.now()}`, role: 'user', content: chatInput }]);
         addLog(`User prompt: "${chatInput}"`, 'INFO');
         
-        setTimeout(() => {
-            setMessages(prev => [...prev, { id: `ai-response-${Date.now()}`, role: 'assistant', content: "Thanks for the feedback! I'm currently focused on the initial build. Follow-up instructions will be enabled in a future version."}]);
-        }, 1000);
+        await handleModification(chatInput);
     };
 
     const handleDownload = () => {
@@ -352,15 +442,21 @@ export function GeneratorWorkspace({ prompt: initialPrompt, model, initialProjec
     };
 
     useEffect(() => {
-        if (initialPrompt && !initialProject) {
-            handleGenerate(initialPrompt);
+        if (effectRan.current === false) {
+            if (initialPrompt && !initialProject) {
+                handleGenerate(initialPrompt);
+            }
+        }
+    
+        return () => {
+            effectRan.current = true;
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [initialPrompt, initialProject]);
 
 
     return (
-        <div className="flex flex-col h-screen bg-white text-black">
+        <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 text-black dark:text-white">
              <ProjectHeader 
                 projectName={projectName}
                 onDownload={handleDownload}
@@ -369,27 +465,41 @@ export function GeneratorWorkspace({ prompt: initialPrompt, model, initialProjec
                 isDeploying={isDeploying}
                 deploymentStatus={deploymentStatus}
             />
-            <ResizablePanelGroup direction="horizontal" className="flex-1">
-                <ResizablePanel defaultSize={40} minSize={20}>
-                    <ChatPanel
-                        messages={messages}
-                        onSend={handleSend}
-                        isLoading={isLoading}
-                        logs={logs}
-                    />
-                </ResizablePanel>
-                <ResizableHandle withHandle />
-                <ResizablePanel defaultSize={60} minSize={30}>
-                    <WorkspacePanel 
-                        files={files}
-                        activeFile={activeFile}
-                        onFileSelect={setActiveFile}
-                        code={activeCode}
-                        setCode={setCodeForActiveFile}
-                        logs={logs}
-                    />
-                </ResizablePanel>
-            </ResizablePanelGroup>
+            <div className="flex-1 p-4 flex flex-col min-h-0">
+                <ResizablePanelGroup direction="horizontal" className="flex-1 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <ResizablePanel defaultSize={40} minSize={20}>
+                        <div className="h-full p-1">
+                            <ChatPanel
+                                messages={messages}
+                                onSend={handleSend}
+                                isLoading={isLoading}
+                                logs={logs}
+                                files={files}
+                                onAcceptAll={handleAcceptAll}
+                                onRejectAll={handleRejectAll}
+                                selectedModel={selectedModel}
+                                onModelChange={setSelectedModel}
+                                isAutoMode={isAutoMode}
+                                onAutoModeChange={setIsAutoMode}
+                                onCancel={handleCancel}
+                            />
+                        </div>
+                    </ResizablePanel>
+                    <ResizableHandle withHandle />
+                    <ResizablePanel defaultSize={60} minSize={30}>
+                        <div className="h-full p-1">
+                            <WorkspacePanel 
+                                files={files}
+                                activeFile={activeFile}
+                                onFileSelect={setActiveFile}
+                                code={activeCode}
+                                setCode={setCodeForActiveFile}
+                                logs={logs}
+                            />
+                        </div>
+                    </ResizablePanel>
+                </ResizablePanelGroup>
+            </div>
             {isUpgradeModalOpen && (
                 <UpgradeModal
                     isOpen={isUpgradeModalOpen}

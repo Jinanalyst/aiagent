@@ -3,7 +3,7 @@ import OpenAI from 'openai';
 import { classifyError } from '@/lib/utils';
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+    apiKey: process.env.OPENAI_API_KEY,
 });
 
 const generationPromptTemplate = `
@@ -13,6 +13,9 @@ Your task is to write the complete, production-ready code for a single file base
 **File to Generate:**
 Path: {filePath}
 Description: "{fileDescription}"
+
+**Project Context:**
+The user wants to build: "{projectPrompt}"
 
 **Dependencies:**
 {dependencyContext}
@@ -29,12 +32,12 @@ Here is the complete code for {filePath}:
 `;
 
 export async function POST(req: NextRequest) {
-  try {
-    const { filePath, fileDescription, fileContents } = await req.json();
+    try {
+    const { filePath, fileDescription, dependencies, projectPrompt } = await req.json();
 
-    if (!filePath || !fileDescription) {
+    if (!filePath || !fileDescription || !projectPrompt) {
       return NextResponse.json({ 
-        error: 'filePath and fileDescription are required',
+        error: 'filePath, fileDescription, and projectPrompt are required',
         type: 'validation'
       }, { status: 400 });
     }
@@ -47,8 +50,8 @@ export async function POST(req: NextRequest) {
     }
 
     let dependencyContext = 'No dependencies.';
-    if (fileContents && Object.keys(fileContents).length > 0) {
-      dependencyContext = Object.entries(fileContents)
+    if (dependencies && Object.keys(dependencies).length > 0) {
+      dependencyContext = Object.entries(dependencies)
         .map(([path, content]) => `/* File: ${path} */\n${content}`)
         .join('\n\n---\n\n');
     }
@@ -56,6 +59,7 @@ export async function POST(req: NextRequest) {
     const prompt = generationPromptTemplate
       .replace('{filePath}', filePath)
       .replace('{fileDescription}', fileDescription)
+      .replace('{projectPrompt}', projectPrompt)
       .replace('{dependencyContext}', dependencyContext);
 
     const response = await openai.chat.completions.create({
@@ -64,10 +68,10 @@ export async function POST(req: NextRequest) {
       temperature: 0, // Lower temperature for more deterministic code generation
       max_tokens: 4000, // Ensure we have enough tokens for complex files
     });
-    
-    const code = response.choices[0].message.content || '';
 
-    if (!code.trim()) {
+    const fileContent = response.choices[0].message.content || '';
+
+    if (!fileContent.trim()) {
       return NextResponse.json({ 
         error: 'No code generated',
         type: 'ai_error',
@@ -75,19 +79,10 @@ export async function POST(req: NextRequest) {
       }, { status: 500 });
     }
 
-    // Basic validation that we got actual code
-    if (code.length < 10) {
-      return NextResponse.json({ 
-        error: 'Generated code is too short',
-        type: 'ai_error',
-        details: 'The AI model may not have generated valid code'
-      }, { status: 500 });
-    }
+    return NextResponse.json({ fileContent });
 
-    return NextResponse.json({ code });
-
-  } catch (error) {
-    console.error('Error generating file:', error);
+    } catch (error) {
+        console.error('Error generating file:', error);
     
     const errorInfo = classifyError(error);
     
@@ -99,19 +94,10 @@ export async function POST(req: NextRequest) {
       }, { status: 401 });
     }
     
-    if (errorInfo.retryable) {
-      return NextResponse.json({ 
-        error: errorInfo.message,
-        type: errorInfo.type,
-        retryable: true,
-        details: 'This error may be temporary. Please try again.'
-      }, { status: 503 });
-    }
-    
     return NextResponse.json({ 
       error: 'Failed to generate file',
       type: 'unknown',
       details: errorInfo.message
     }, { status: 500 });
-  }
+    }
 } 
