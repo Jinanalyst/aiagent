@@ -1,90 +1,88 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
-import { ChevronDown, Upload, Zap, Rocket, Lock, GitBranch, CreditCard, Database, Download, Bolt, RefreshCw } from "lucide-react"
-import Link from "next/link"
-import { DeploymentModal } from "./DeploymentModal"
+} from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, Download } from 'lucide-react';
 
 interface ProjectHeaderProps {
   projectName: string;
-  onDownload: () => void;
-  onRetry: () => void;
-  onDeploy: (platform: string) => Promise<void>;
-  isDeploying: boolean;
-  deploymentStatus: string;
+  onDownload?: () => void;
+  onRetry?: () => void;
+  onDeploy?: (platform: string) => void;
+  isDeploying?: boolean;
+  deploymentStatus?: string;
 }
 
-export function ProjectHeader({ projectName, onDownload, onRetry, onDeploy, isDeploying, deploymentStatus }: ProjectHeaderProps) {
+export function ProjectHeader({ 
+  projectName, 
+  onDownload, 
+  onRetry, 
+  onDeploy, 
+  isDeploying, 
+  deploymentStatus 
+}: ProjectHeaderProps) {
   return (
-    <header className="flex items-center justify-between h-16 px-6 border-b bg-white">
-      <div className="flex items-center gap-4">
-        <Link href="/generate" className="text-gray-500 hover:text-gray-700">
-          <ChevronDown className="h-5 w-5 rotate-90" />
-        </Link>
-        <div>
-          <h1 className="text-lg font-semibold">{projectName}</h1>
-        </div>
-        <Button variant="ghost" size="icon" onClick={onRetry} title="Retry Generation">
-            <RefreshCw className="h-4 w-4" />
-        </Button>
+    <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div className="flex items-center space-x-4">
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+          {projectName}
+        </h1>
+        {deploymentStatus && (
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {deploymentStatus}
+          </span>
+        )}
       </div>
-
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Database className="h-4 w-4" />
-          <span>AI Generated</span>
-        </div>
-
+      
+      <div className="flex items-center space-x-2">
+        {onDownload && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onDownload}
+            className="flex items-center space-x-2"
+          >
+            <Download className="h-4 w-4" />
+            <span>Download</span>
+          </Button>
+        )}
+        
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Upload className="h-4 w-4" />
-              Export
-              <ChevronDown className="h-4 w-4" />
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onDownload}>
-                <Download className="h-4 w-4 mr-2" />
-                <span>Download</span>
-            </DropdownMenuItem>
-            <DeploymentModal 
-              onDeploy={onDeploy}
-              isDeploying={isDeploying}
-              deploymentStatus={deploymentStatus}
-            >
-              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <Rocket className="h-4 w-4 mr-2" />
-                  <span>Deploy</span>
+            {onRetry && (
+              <DropdownMenuItem onClick={onRetry}>
+                Retry Generation
               </DropdownMenuItem>
-            </DeploymentModal>
-            <DropdownMenuItem>
-                <Bolt className="h-4 w-4 mr-2" />
-                <span>Open in StackBlitz</span>
-            </DropdownMenuItem>
+            )}
+            {onDeploy && (
+              <>
+                <DropdownMenuItem 
+                  onClick={() => onDeploy('netlify')}
+                  disabled={isDeploying}
+                >
+                  Deploy to Netlify
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => onDeploy('vercel')}
+                  disabled={isDeploying}
+                >
+                  Deploy to Vercel
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
-
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm">
-            <GitBranch className="h-4 w-4 mr-2" />
-            Git
-          </Button>
-          <Button variant="ghost" size="sm">
-            <CreditCard className="h-4 w-4 mr-2" />
-            Billing
-          </Button>
-        </div>
       </div>
-    </header>
-  )
+    </div>
+  );
 } 

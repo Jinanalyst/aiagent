@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { WorkspacePanel } from '@/components/project/WorkspacePanel';
@@ -39,20 +39,9 @@ export function GeneratorWorkspace({ prompt: initialPrompt, initialProject }: Ge
     const { user, deductCredits } = useUser();
     const { addProject } = useProjects();
     
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [projectName, setProjectName] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
     const effectRan = useRef(false);
-
-    useEffect(() => {
-        if (initialProject) {
-            setProjectName(initialProject.name);
-            setMessages([
-                { id: 'initial', role: 'assistant', content: 'Project loaded successfully!', createdAt: new Date() }
-            ]);
-        }
-    }, [initialProject]);
 
     const createPlan = async (prompt: string) => {
         if (!user) return;
@@ -100,27 +89,14 @@ export function GeneratorWorkspace({ prompt: initialPrompt, initialProject }: Ge
                 updatedAt: new Date()
             });
 
-            setMessages(prev => [...prev, {
-                id: `assistant-${Date.now()}`,
-                role: 'assistant',
-                content: `I've created a project based on your request: "${prompt}". The project includes the basic structure you requested.`,
-                createdAt: new Date()
-            }]);
-
         } catch (error: unknown) {
             console.error('Generation failed:', error);
-            setMessages(prev => [...prev, {
-                id: `error-${Date.now()}`,
-                role: 'assistant',
-                content: 'Sorry, there was an error generating your project. Please try again.',
-                createdAt: new Date()
-            }]);
         } finally {
             setIsGenerating(false);
         }
     };
 
-    const handleGenerate = async () => {
+    const handleGenerate = useCallback(async () => {
         if (!user) {
             setUpgradeModalOpen(true);
             return;
@@ -134,11 +110,9 @@ export function GeneratorWorkspace({ prompt: initialPrompt, initialProject }: Ge
         }
         
         if (initialPrompt) {
-            setProjectName(`Project for "${initialPrompt.substring(0, 40)}..."`);
-            setMessages([{ id: 'user-prompt', role: 'user', content: initialPrompt, createdAt: new Date() }]);
             createPlan(initialPrompt);
         }
-    };
+    }, [user, deductCredits, initialPrompt]);
     
     useEffect(() => {
         if (effectRan.current === false) {
@@ -150,7 +124,7 @@ export function GeneratorWorkspace({ prompt: initialPrompt, initialProject }: Ge
         return () => {
             effectRan.current = true;
         }
-    }, [initialPrompt, initialProject]);
+    }, [initialPrompt, initialProject, handleGenerate]);
 
     if (isGenerating) {
         return (
