@@ -30,6 +30,11 @@ export function FileExplorer({ files, onFileSelect, activeFile }: FileExplorerPr
     const root: FileNode = { name: '', path: '', type: 'folder', children: [] };
     
     files.forEach(file => {
+      // Skip files with undefined or empty paths
+      if (!file.path || typeof file.path !== 'string') {
+        return;
+      }
+      
       const parts = file.path.split('/').filter(part => part);
       let current = root;
       

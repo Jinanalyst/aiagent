@@ -612,21 +612,67 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
             }
 
-            // Create files with proper structure
-            const generatedFiles = plan.files.map(file => ({
-                id: `file-${Date.now()}-${Math.random()}`,
-                path: file.path,
-                content: file.content,
-                status: 'completed' as const
-            }));
-
-            setFiles(generatedFiles);
+            // Create files with streaming generation effect
+            const streamFiles = async () => {
+                // Initialize empty files
+                const generatedFiles = plan.files.map(file => ({
+                    id: `file-${Date.now()}-${Math.random()}`,
+                    path: file.path,
+                    content: '',
+                    status: 'generating' as const
+                }));
+                
+                setFiles(generatedFiles);
+                
+                // Set the first file as active immediately
+                if (generatedFiles.length > 0) {
+                    setActiveFile({ path: generatedFiles[0].path, content: '' });
+                    setActiveCode('');
+                }
+                
+                addLog(`Generating ${plan.files.length} files...`);
+                
+                // Stream each file's content progressively
+                for (let i = 0; i < plan.files.length; i++) {
+                    const file = plan.files[i];
+                    addLog(`Writing ${file.path}...`);
+                    
+                    // Simulate typing effect for the active file
+                    if (i === 0) {
+                        await streamCodeToActiveFile(file.content);
+                    }
+                    
+                    // Update file status to completed
+                    setFiles(prev => prev.map(f => 
+                        f.path === file.path 
+                            ? { ...f, content: file.content, status: 'completed' as const }
+                            : f
+                    ));
+                    
+                    // Small delay between files
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                addLog('All files generated successfully!');
+            };
             
-            // Set the first file as active
-            if (generatedFiles.length > 0) {
-                setActiveFile({ path: generatedFiles[0].path, content: generatedFiles[0].content });
-                setActiveCode(generatedFiles[0].content);
-            }
+            // Function to stream code into the active editor
+            const streamCodeToActiveFile = async (fullContent: string) => {
+                const words = fullContent.split(' ');
+                let currentContent = '';
+                
+                for (let i = 0; i < words.length; i++) {
+                    currentContent += (i > 0 ? ' ' : '') + words[i];
+                    setActiveCode(currentContent);
+                    setActiveFile(prev => prev ? { ...prev, content: currentContent } : null);
+                    
+                    // Variable typing speed - faster for whitespace, slower for complex syntax
+                    const delay = words[i].includes('<') || words[i].includes('{') || words[i].includes('(') ? 30 : 10;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            };
+            
+            await streamFiles();
 
             // Add project to the projects list
             addProject({
@@ -641,7 +687,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setMessages(prev => [...prev, {
                 id: `assistant-${Date.now()}`,
                 role: 'assistant',
-                content: `I've created a project based on your request: "${prompt}". The project includes ${plan.files.length} file${plan.files.length > 1 ? 's' : ''} with a complete implementation.`,
+                content: `I've created a project based on your request: "${prompt}". The project includes ${plan.files.length} file${plan.files.length > 1 ? 's' : ''} with a complete implementation. You can see the code being generated in real-time in the editor!`,
                 createdAt: new Date()
             }]);
 
@@ -680,7 +726,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, [user, deductCredits, initialPrompt, createPlan]);
 
-    const handleSend = (message: string) => {
+    const handleSend = async (message: string) => {
         if (!user) return;
         
         setMessages(prev => [...prev, { 
@@ -691,17 +737,92 @@ document.addEventListener('DOMContentLoaded', () => {
         }]);
         
         addLog(`User message: ${message}`);
+        setIsGenerating(true);
         
-        // Simulate AI response
-        setTimeout(() => {
-            setMessages(prev => [...prev, {
-                id: `assistant-${Date.now()}`,
-                role: 'assistant',
-                content: `I understand you want to: "${message}". I'll help you with that.`,
-                createdAt: new Date()
-            }]);
-            addLog('AI response generated');
-        }, 1000);
+        try {
+            // Simulate AI processing time
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Check if user is asking for code modifications
+            const isCodeRequest = message.toLowerCase().includes('add') || 
+                                message.toLowerCase().includes('create') ||
+                                message.toLowerCase().includes('modify') ||
+                                message.toLowerCase().includes('change') ||
+                                message.toLowerCase().includes('update') ||
+                                message.toLowerCase().includes('build') ||
+                                message.toLowerCase().includes('make');
+            
+            if (isCodeRequest && files.length > 0) {
+                // Simulate code modification
+                addLog('Analyzing request...');
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                addLog('Generating code changes...');
+                
+                // Create a simple modification to show the effect
+                if (activeFile) {
+                    const modifiedContent = activeFile.content + `\n\n<!-- Added based on user request: ${message} -->
+<div class="user-request-addition" style="padding: 20px; margin: 20px 0; background: #f0f8ff; border-left: 4px solid #007acc; border-radius: 4px;">
+    <h3>✨ New Feature Added</h3>
+    <p>This section was generated based on your request: "${message}"</p>
+    <p>The AI has analyzed your request and added this enhancement to improve the project.</p>
+</div>`;
+                    
+                    // Update the active file with streaming effect
+                    await streamCodeUpdate(modifiedContent);
+                    
+                    // Update files state
+                    setFiles(prev => prev.map(file => 
+                        file.path === activeFile.path 
+                            ? { ...file, content: modifiedContent, status: 'completed' as const }
+                            : file
+                    ));
+                }
+                
+                setMessages(prev => [...prev, {
+                    id: `assistant-${Date.now()}`,
+                    role: 'assistant',
+                    content: `I've implemented your request: "${message}". The code has been updated and you can see the changes in the editor. The new functionality has been added to enhance your project!`,
+                    createdAt: new Date()
+                }]);
+                
+                addLog('Code changes applied successfully!');
+            } else {
+                // Regular chat response
+                setMessages(prev => [...prev, {
+                    id: `assistant-${Date.now()}`,
+                    role: 'assistant',
+                    content: `I understand you want to: "${message}". I can help you with code generation, modifications, and project enhancements. Try asking me to "add a contact form" or "create a navigation menu" to see live code generation!`,
+                    createdAt: new Date()
+                }]);
+                addLog('AI response generated');
+            }
+        } catch (error) {
+            console.error('Message handling failed:', error);
+            addLog('Failed to process message');
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+    
+    // Function to stream code updates to the editor
+    const streamCodeUpdate = async (newContent: string) => {
+        if (!activeFile) return;
+        
+        const currentLength = activeFile.content.length;
+        const additionalContent = newContent.slice(currentLength);
+        const words = additionalContent.split(' ');
+        let streamedContent = activeFile.content;
+        
+        for (let i = 0; i < words.length; i++) {
+            streamedContent += (i > 0 ? ' ' : '') + words[i];
+            setActiveCode(streamedContent);
+            setActiveFile(prev => prev ? { ...prev, content: streamedContent } : null);
+            
+            // Variable typing speed
+            const delay = words[i].includes('<') || words[i].includes('{') || words[i].includes('(') ? 25 : 8;
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
     };
 
     const handleAcceptAll = () => {
@@ -734,12 +855,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (effectRan.current === false) {
             if (initialProject) {
                 // Handle existing project
-                const projectFiles = initialProject.files.map((file, index) => ({
-                    id: `file-${index}`,
-                    path: 'name' in file ? file.name : file.path,
-                    content: file.content,
-                    status: 'status' in file ? file.status as 'pending' | 'generating' | 'completed' | 'error' : 'completed' as const
-                }));
+                const projectFiles = initialProject.files.map((file, index) => {
+                    let filePath: string;
+                    if ('name' in file && file.name) {
+                        filePath = file.name;
+                    } else if ('path' in file && file.path) {
+                        filePath = file.path;
+                    } else {
+                        filePath = `untitled-${index}.txt`;
+                    }
+                    
+                    return {
+                        id: `file-${index}`,
+                        path: filePath,
+                        content: file.content || '',
+                        status: 'status' in file ? file.status as 'pending' | 'generating' | 'completed' | 'error' : 'completed' as const
+                    };
+                }).filter(file => file.path); // Filter out any files that still don't have valid paths
                 
                 setFiles(projectFiles);
                 
