@@ -19,11 +19,13 @@ interface CodeEditorProps {
 }
 
 export const CodeEditor = ({ code, setCode }: CodeEditorProps) => {
+  const currentCode = typeof code === 'string' ? code : '';
+  
   return (
     <div className="relative h-full font-mono text-sm bg-[#f8f8f8] border-l">
         <div className="absolute top-2 right-4 text-xs text-gray-400">TypeScript</div>
          <Editor
-            value={code}
+            value={currentCode}
             onValueChange={code => setCode(code)}
             highlight={code => Prism.highlight(code, Prism.languages.tsx, 'tsx')}
             padding={16}
