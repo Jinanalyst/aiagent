@@ -197,15 +197,13 @@ export function WorkspacePanel({
             )}
 
             {/* Editor Content */}
-            <div className="flex-1 relative overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-hidden">
               {activeTabContent ? (
-                <div className="h-full w-full">
-                  <CodeEditor
-                    code={activeTabContent.content}
-                    setCode={handleCodeChange}
-                    readOnly={!onCodeChange}
-                  />
-                </div>
+                <CodeEditor
+                  code={activeTabContent.content}
+                  setCode={handleCodeChange}
+                  readOnly={!onCodeChange}
+                />
               ) : (
                 <div className="h-full flex items-center justify-center text-gray-400">
                   <div className="text-center">
