@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react';
 import { WorkspacePanel } from '@/components/project/WorkspacePanel';
 import { ChatPanel } from '@/components/project/ChatPanel';
 import { ChangeManager } from '@/components/project/ChangeManager';
+import { ChangesPopup } from '@/components/project/ChangesPopup';
 import { useUser } from '@/hooks/useUser';
 import { useProjects } from '@/hooks/useProjects';
 import { UpgradeModal } from '@/components/user/UpgradeModal';
@@ -71,6 +72,7 @@ export function GeneratorWorkspace({ prompt: initialPrompt, initialProject }: Ge
     const [fileChanges, setFileChanges] = useState<FileChange[]>([]);
     const [currentSession, setCurrentSession] = useState<ChangeSession | null>(null);
     const [showChangeManager, setShowChangeManager] = useState(false);
+    const [showChangesPopup, setShowChangesPopup] = useState(false);
     const [originalFiles, setOriginalFiles] = useState<Map<string, string>>(new Map());
 
     const addLog = (message: string) => {
@@ -115,6 +117,11 @@ export function GeneratorWorkspace({ prompt: initialPrompt, initialProject }: Ge
             return [...filtered, change];
         });
 
+        // Create a change session if none exists
+        if (!currentSession) {
+            createChangeSession();
+        }
+
         // Update the current session
         if (currentSession) {
             setCurrentSession(prev => prev ? {
@@ -122,6 +129,9 @@ export function GeneratorWorkspace({ prompt: initialPrompt, initialProject }: Ge
                 changes: [...prev.changes.filter(c => c.filePath !== filePath || c.status !== 'pending'), change]
             } : null);
         }
+
+        // Show the changes popup when new changes are tracked
+        setShowChangesPopup(true);
     };
 
     const acceptChange = (changeId: string) => {
@@ -151,6 +161,12 @@ export function GeneratorWorkspace({ prompt: initialPrompt, initialProject }: Ge
             
             addLog(`Accepted changes to ${change.filePath}`);
         }
+
+        // Hide popup if no more pending changes
+        const remainingPending = fileChanges.filter(c => c.status === 'pending' && c.id !== changeId);
+        if (remainingPending.length === 0) {
+            setShowChangesPopup(false);
+        }
     };
 
     const rejectChange = (changeId: string) => {
@@ -164,6 +180,12 @@ export function GeneratorWorkspace({ prompt: initialPrompt, initialProject }: Ge
         if (change) {
             addLog(`Rejected changes to ${change.filePath}`);
         }
+
+        // Hide popup if no more pending changes
+        const remainingPending = fileChanges.filter(c => c.status === 'pending' && c.id !== changeId);
+        if (remainingPending.length === 0) {
+            setShowChangesPopup(false);
+        }
     };
 
     const acceptAllChanges = () => {
@@ -174,6 +196,7 @@ export function GeneratorWorkspace({ prompt: initialPrompt, initialProject }: Ge
         });
 
         setShowChangeManager(false);
+        setShowChangesPopup(false);
         addLog(`Accepted all ${pendingChanges.length} pending changes`);
     };
 
@@ -187,6 +210,7 @@ export function GeneratorWorkspace({ prompt: initialPrompt, initialProject }: Ge
         ));
 
         setShowChangeManager(false);
+        setShowChangesPopup(false);
         addLog(`Rejected all ${pendingChanges.length} pending changes`);
     };
 
@@ -914,13 +938,13 @@ module.exports = router;`
                     const file = plan.files[i];
                     addLog(`Writing ${file.path}...`);
                     
+                    // Track the file creation immediately when starting to generate
+                    trackFileChange(file.path, file.content, 'created', `AI generated file: ${file.path}`);
+                    
                     // Simulate typing effect for the active file
                     if (i === 0) {
                         await streamCodeToActiveFile(file.content);
                     }
-                    
-                    // Track the newly generated file as a change
-                    trackFileChange(file.path, file.content, 'created', `AI generated file: ${file.path}`);
                     
                     // Update file status to completed
                     setFiles(prev => prev.map(f => 
@@ -934,14 +958,6 @@ module.exports = router;`
                 }
                 
                 addLog('All files generated successfully!');
-                
-                // Create a change session for the generated files
-                if (!currentSession) {
-                    createChangeSession();
-                }
-                
-                // Show change manager for newly generated files
-                setShowChangeManager(true);
             };
             
             // Function to stream code into the active editor
@@ -1047,35 +1063,95 @@ module.exports = router;`
                 
                 addLog('Generating code changes...');
                 
-                // Create a simple modification to show the effect
-                if (activeFile) {
-                    const modifiedContent = activeFile.content + `\n\n<!-- Added based on user request: ${message} -->
-<div class="user-request-addition" style="padding: 20px; margin: 20px 0; background: #f0f8ff; border-left: 4px solid #007acc; border-radius: 4px;">
-    <h3>✨ New Feature Added</h3>
-    <p>This section was generated based on your request: "${message}"</p>
-    <p>The AI has analyzed your request and added this enhancement to improve the project.</p>
-</div>`;
+                // Generate multiple file modifications based on the request
+                if (files.length > 0) {
+                    const filesToModify = files.slice(0, Math.min(3, files.length)); // Modify up to 3 files
                     
-                    // Update the active file with streaming effect
-                    await streamCodeUpdate(modifiedContent);
-                    
-                    // Track the AI-generated change
-                    trackFileChange(activeFile.path, modifiedContent, 'modified', `AI modification: ${message}`);
-                    
-                    // Create a change session if none exists
-                    if (!currentSession) {
-                        createChangeSession();
+                    for (let i = 0; i < filesToModify.length; i++) {
+                        const file = filesToModify[i];
+                        const isActiveFile = activeFile && file.path === activeFile.path;
+                        
+                        addLog(`Modifying ${file.path}...`);
+                        
+                        let modifiedContent;
+                        if (file.path.endsWith('.html')) {
+                            modifiedContent = file.content + `\n\n<!-- Enhanced based on user request: ${message} -->
+<section class="ai-enhancement" style="padding: 20px; margin: 20px 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white;">
+    <h3 style="margin: 0 0 10px 0;">✨ AI Enhancement</h3>
+    <p style="margin: 0;">This feature was added based on your request: "${message}"</p>
+</section>`;
+                        } else if (file.path.endsWith('.css')) {
+                            modifiedContent = file.content + `\n\n/* AI-generated styles for: ${message} */
+.ai-enhancement {
+    animation: fadeInUp 0.6s ease-out;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease;
+}
+
+.ai-enhancement:hover {
+    transform: translateY(-5px);
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}`;
+                        } else if (file.path.endsWith('.js') || file.path.endsWith('.ts') || file.path.endsWith('.tsx')) {
+                            modifiedContent = file.content + `\n\n// AI-generated functionality for: ${message}
+export const aiEnhancement = {
+    message: "${message}",
+    timestamp: new Date().toISOString(),
+    features: ["Dynamic updates", "Enhanced UX", "Performance optimization"],
+    
+    init() {
+        console.log('AI Enhancement initialized:', this.message);
+        this.addInteractivity();
+    },
+    
+    addInteractivity() {
+        // Add smooth animations and interactions
+        document.addEventListener('DOMContentLoaded', () => {
+            const enhancements = document.querySelectorAll('.ai-enhancement');
+            enhancements.forEach(el => {
+                el.addEventListener('click', () => {
+                    el.style.transform = 'scale(1.05)';
+                    setTimeout(() => el.style.transform = 'scale(1)', 200);
+                });
+            });
+        });
+    }
+};
+
+// Auto-initialize
+aiEnhancement.init();`;
+                        } else {
+                            modifiedContent = file.content + `\n\n# AI Enhancement\n\nAdded functionality based on user request: "${message}"\n\nTimestamp: ${new Date().toISOString()}`;
+                        }
+                        
+                        // Stream updates for the active file
+                        if (isActiveFile) {
+                            await streamCodeUpdate(modifiedContent);
+                        }
+                        
+                        // Track the AI-generated change
+                        trackFileChange(file.path, modifiedContent, 'modified', `AI modification: ${message}`);
+                        
+                        // Update files state
+                        setFiles(prev => prev.map(f => 
+                            f.path === file.path 
+                                ? { ...f, content: modifiedContent, status: 'completed' as const }
+                                : f
+                        ));
+                        
+                        // Update active file if it's the one being modified
+                        if (isActiveFile) {
+                            setActiveFile({ path: file.path, content: modifiedContent });
+                            setActiveCode(modifiedContent);
+                        }
+                        
+                        // Delay between file modifications
+                        await new Promise(resolve => setTimeout(resolve, 800));
                     }
-                    
-                    // Update files state
-                    setFiles(prev => prev.map(file => 
-                        file.path === activeFile.path 
-                            ? { ...file, content: modifiedContent, status: 'completed' as const }
-                            : file
-                    ));
-                    
-                    // Show change manager for AI-generated changes
-                    setShowChangeManager(true);
                 }
                 
                 setMessages(prev => [...prev, {
@@ -1152,17 +1228,6 @@ module.exports = router;`
         if (activeFile) {
             // Track the file change
             trackFileChange(activeFile.path, newCode, 'modified', 'Manual edit in code editor');
-            
-            // Create a change session if none exists
-            if (!currentSession) {
-                createChangeSession();
-            }
-            
-            // Show change manager if there are pending changes
-            const pendingChanges = fileChanges.filter(c => c.status === 'pending');
-            if (pendingChanges.length > 0) {
-                setShowChangeManager(true);
-            }
             
             setFiles(prev => prev.map(file => 
                 file.path === activeFile.path 
@@ -1954,12 +2019,10 @@ MIT License - see LICENSE file for details`,
                             messages={messages}
                             logs={logs}
                             files={files}
-                            fileChanges={fileChanges}
                             isLoading={isGenerating}
                             onSend={handleSend}
                             onAcceptAll={handleAcceptAll}
                             onRejectAll={handleRejectAll}
-                            onOpenChangeManager={() => setShowChangeManager(true)}
                             onModelChange={setSelectedModel}
                             selectedModel={selectedModel}
                             isAutoMode={isAutoMode}
@@ -1981,6 +2044,16 @@ MIT License - see LICENSE file for details`,
                 onRejectAll={rejectAllChanges}
                 isVisible={showChangeManager}
                 onClose={() => setShowChangeManager(false)}
+            />
+            <ChangesPopup
+                changes={fileChanges}
+                onAcceptChange={acceptChange}
+                onRejectChange={rejectChange}
+                onAcceptAll={acceptAllChanges}
+                onRejectAll={rejectAllChanges}
+                onViewDetails={() => setShowChangeManager(true)}
+                isVisible={showChangesPopup}
+                isGenerating={isGenerating}
             />
         </>
     );

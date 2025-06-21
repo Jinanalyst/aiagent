@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Send, Paperclip, Bot, User, Terminal, ChevronUp, CircleX, CheckCircle, Square, FileIcon, Loader2, Code, Zap } from "lucide-react"
 import { Message } from 'ai/react';
-import { GeneratedFile, FileChange } from "@/types";
+import { GeneratedFile } from "@/types";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -40,12 +40,10 @@ interface ChatPanelProps {
     messages: Message[];
     logs: string[];
     files: GeneratedFile[];
-    fileChanges: FileChange[];
     isLoading: boolean;
     onSend: (message: string) => void;
     onAcceptAll: () => void;
     onRejectAll: () => void;
-    onOpenChangeManager: () => void;
     onModelChange: (model: string) => void;
     selectedModel: string;
     isAutoMode: boolean;
@@ -54,8 +52,8 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({
-    messages, logs, files, fileChanges, isLoading, onSend,
-    onAcceptAll, onRejectAll, onOpenChangeManager, onModelChange, selectedModel,
+    messages, logs, files, isLoading, onSend,
+    onAcceptAll, onRejectAll, onModelChange, selectedModel,
     isAutoMode, onAutoModeChange, onCancel
 }: ChatPanelProps) {
     const [input, setInput] = useState("");
@@ -194,7 +192,6 @@ export function ChatPanel({
             || progressSteps[progressSteps.length - 1];
     };
 
-    const pendingChangesCount = fileChanges.filter(c => c.status === 'pending').length;
     const editedFilesCount = files.filter(f => f.status === 'completed' || f.status === 'generating' || f.status === 'error').length;
 
     const renderProgressBar = (progress: number) => (
@@ -298,26 +295,9 @@ export function ChatPanel({
             <div className="p-4 border-t dark:border-gray-700">
                 <div className="bg-gray-900 text-gray-300 rounded-lg p-3 space-y-3 shadow-sm border border-gray-700">
 
-                    {(pendingChangesCount > 0 || editedFilesCount > 0) && (
+                    {editedFilesCount > 0 && (
                         <div className="flex justify-between items-center text-sm px-2 py-1 bg-gray-800 rounded-md">
-                            <div className="flex items-center gap-2">
-                                <span>
-                                    {pendingChangesCount > 0 
-                                        ? `${pendingChangesCount} pending change${pendingChangesCount !== 1 ? 's' : ''}`
-                                        : `${editedFilesCount} file${editedFilesCount !== 1 ? 's' : ''} edited`
-                                    }
-                                </span>
-                                {pendingChangesCount > 0 && (
-                                    <Button 
-                                        variant="ghost" 
-                                        size="sm" 
-                                        onClick={onOpenChangeManager}
-                                        className="text-blue-400 hover:text-blue-300 px-2 py-1 h-auto text-xs"
-                                    >
-                                        View Details
-                                    </Button>
-                                )}
-                            </div>
+                            <span>Edited {editedFilesCount} files</span>
                             <div>
                                 <Button variant="ghost" size="sm" onClick={onRejectAll}>
                                     <CircleX className="h-4 w-4 mr-1"/>
