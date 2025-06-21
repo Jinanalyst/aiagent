@@ -112,4 +112,44 @@ export interface SubscriptionStatus {
   daysUntilExpiry: number;
   needsRenewal: boolean;
   showRenewalReminder: boolean;
+}
+
+// New types for file change management
+export interface FileChange {
+  id: string;
+  filePath: string;
+  originalContent: string;
+  modifiedContent: string;
+  changeType: 'created' | 'modified' | 'deleted';
+  status: 'pending' | 'accepted' | 'rejected';
+  timestamp: Date;
+  description?: string;
+}
+
+export interface FileDiff {
+  additions: number;
+  deletions: number;
+  chunks: DiffChunk[];
+}
+
+export interface DiffChunk {
+  oldStart: number;
+  oldLines: number;
+  newStart: number;
+  newLines: number;
+  lines: DiffLine[];
+}
+
+export interface DiffLine {
+  type: 'add' | 'remove' | 'normal';
+  content: string;
+  lineNumber?: number;
+}
+
+export interface ChangeSession {
+  id: string;
+  changes: FileChange[];
+  status: 'active' | 'completed' | 'cancelled';
+  createdAt: Date;
+  completedAt?: Date;
 } 

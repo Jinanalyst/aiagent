@@ -5,10 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { WorkspacePanel } from '@/components/project/WorkspacePanel';
 import { ChatPanel } from '@/components/project/ChatPanel';
+import { ChangeManager } from '@/components/project/ChangeManager';
 import { useUser } from '@/hooks/useUser';
 import { useProjects } from '@/hooks/useProjects';
 import { UpgradeModal } from '@/components/user/UpgradeModal';
 import { ProfileSidebar } from "@/components/ui/profile-sidebar";
+import { FileChange, ChangeSession } from '@/types';
 
 interface Message {
     id: string;
@@ -64,10 +66,128 @@ export function GeneratorWorkspace({ prompt: initialPrompt, initialProject }: Ge
     const [isAutoMode, setIsAutoMode] = useState(true);
     const [logs, setLogs] = useState<string[]>([]);
     const effectRan = useRef(false);
+    
+    // Change tracking state
+    const [fileChanges, setFileChanges] = useState<FileChange[]>([]);
+    const [currentSession, setCurrentSession] = useState<ChangeSession | null>(null);
+    const [showChangeManager, setShowChangeManager] = useState(false);
+    const [originalFiles, setOriginalFiles] = useState<Map<string, string>>(new Map());
 
     const addLog = (message: string) => {
         const timestamp = new Date().toLocaleTimeString();
         setLogs(prev => [...prev, `[${timestamp}] ${message}`]);
+    };
+
+    // Change tracking functions
+    const createChangeSession = () => {
+        const session: ChangeSession = {
+            id: `session-${Date.now()}`,
+            changes: [],
+            status: 'active',
+            createdAt: new Date()
+        };
+        setCurrentSession(session);
+        return session;
+    };
+
+    const trackFileChange = (filePath: string, newContent: string, changeType: 'created' | 'modified' | 'deleted', description?: string) => {
+        const originalContent = originalFiles.get(filePath) || '';
+        
+        // Don't track if content is the same
+        if (originalContent === newContent && changeType === 'modified') {
+            return;
+        }
+
+        const change: FileChange = {
+            id: `change-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            filePath,
+            originalContent,
+            modifiedContent: newContent,
+            changeType,
+            status: 'pending',
+            timestamp: new Date(),
+            description
+        };
+
+        setFileChanges(prev => {
+            // Remove any existing pending changes for this file
+            const filtered = prev.filter(c => c.filePath !== filePath || c.status !== 'pending');
+            return [...filtered, change];
+        });
+
+        // Update the current session
+        if (currentSession) {
+            setCurrentSession(prev => prev ? {
+                ...prev,
+                changes: [...prev.changes.filter(c => c.filePath !== filePath || c.status !== 'pending'), change]
+            } : null);
+        }
+    };
+
+    const acceptChange = (changeId: string) => {
+        setFileChanges(prev => prev.map(change => 
+            change.id === changeId 
+                ? { ...change, status: 'accepted' as const }
+                : change
+        ));
+
+        // Apply the change to the actual files
+        const change = fileChanges.find(c => c.id === changeId);
+        if (change) {
+            setFiles(prev => prev.map(file => 
+                file.path === change.filePath 
+                    ? { ...file, content: change.modifiedContent }
+                    : file
+            ));
+
+            // Update active file if it's the one being changed
+            if (activeFile && activeFile.path === change.filePath) {
+                setActiveFile({ ...activeFile, content: change.modifiedContent });
+                setActiveCode(change.modifiedContent);
+            }
+
+            // Update original content for future changes
+            setOriginalFiles(prev => new Map(prev.set(change.filePath, change.modifiedContent)));
+            
+            addLog(`Accepted changes to ${change.filePath}`);
+        }
+    };
+
+    const rejectChange = (changeId: string) => {
+        setFileChanges(prev => prev.map(change => 
+            change.id === changeId 
+                ? { ...change, status: 'rejected' as const }
+                : change
+        ));
+
+        const change = fileChanges.find(c => c.id === changeId);
+        if (change) {
+            addLog(`Rejected changes to ${change.filePath}`);
+        }
+    };
+
+    const acceptAllChanges = () => {
+        const pendingChanges = fileChanges.filter(c => c.status === 'pending');
+        
+        pendingChanges.forEach(change => {
+            acceptChange(change.id);
+        });
+
+        setShowChangeManager(false);
+        addLog(`Accepted all ${pendingChanges.length} pending changes`);
+    };
+
+    const rejectAllChanges = () => {
+        const pendingChanges = fileChanges.filter(c => c.status === 'pending');
+        
+        setFileChanges(prev => prev.map(change => 
+            change.status === 'pending' 
+                ? { ...change, status: 'rejected' as const }
+                : change
+        ));
+
+        setShowChangeManager(false);
+        addLog(`Rejected all ${pendingChanges.length} pending changes`);
     };
 
     const createPlan = useCallback(async (prompt: string) => {
@@ -799,6 +919,9 @@ module.exports = router;`
                         await streamCodeToActiveFile(file.content);
                     }
                     
+                    // Track the newly generated file as a change
+                    trackFileChange(file.path, file.content, 'created', `AI generated file: ${file.path}`);
+                    
                     // Update file status to completed
                     setFiles(prev => prev.map(f => 
                         f.path === file.path 
@@ -811,6 +934,14 @@ module.exports = router;`
                 }
                 
                 addLog('All files generated successfully!');
+                
+                // Create a change session for the generated files
+                if (!currentSession) {
+                    createChangeSession();
+                }
+                
+                // Show change manager for newly generated files
+                setShowChangeManager(true);
             };
             
             // Function to stream code into the active editor
@@ -928,12 +1059,23 @@ module.exports = router;`
                     // Update the active file with streaming effect
                     await streamCodeUpdate(modifiedContent);
                     
+                    // Track the AI-generated change
+                    trackFileChange(activeFile.path, modifiedContent, 'modified', `AI modification: ${message}`);
+                    
+                    // Create a change session if none exists
+                    if (!currentSession) {
+                        createChangeSession();
+                    }
+                    
                     // Update files state
                     setFiles(prev => prev.map(file => 
                         file.path === activeFile.path 
                             ? { ...file, content: modifiedContent, status: 'completed' as const }
                             : file
                     ));
+                    
+                    // Show change manager for AI-generated changes
+                    setShowChangeManager(true);
                 }
                 
                 setMessages(prev => [...prev, {
@@ -983,11 +1125,21 @@ module.exports = router;`
     };
 
     const handleAcceptAll = () => {
-        addLog('All changes accepted');
+        const pendingChanges = fileChanges.filter(c => c.status === 'pending');
+        if (pendingChanges.length > 0) {
+            acceptAllChanges();
+        } else {
+            addLog('No pending changes to accept');
+        }
     };
 
     const handleRejectAll = () => {
-        addLog('All changes rejected');
+        const pendingChanges = fileChanges.filter(c => c.status === 'pending');
+        if (pendingChanges.length > 0) {
+            rejectAllChanges();
+        } else {
+            addLog('No pending changes to reject');
+        }
     };
 
     const handleCancel = () => {
@@ -998,6 +1150,20 @@ module.exports = router;`
     const handleCodeChange = (newCode: string) => {
         setActiveCode(newCode);
         if (activeFile) {
+            // Track the file change
+            trackFileChange(activeFile.path, newCode, 'modified', 'Manual edit in code editor');
+            
+            // Create a change session if none exists
+            if (!currentSession) {
+                createChangeSession();
+            }
+            
+            // Show change manager if there are pending changes
+            const pendingChanges = fileChanges.filter(c => c.status === 'pending');
+            if (pendingChanges.length > 0) {
+                setShowChangeManager(true);
+            }
+            
             setFiles(prev => prev.map(file => 
                 file.path === activeFile.path 
                     ? { ...file, content: newCode }
@@ -1037,6 +1203,13 @@ module.exports = router;`
                 }).filter(file => file.path && file.path.trim()); // Filter out any files that still don't have valid paths
                 
                 setFiles(projectFiles);
+                
+                // Initialize original files tracking
+                const originalFilesMap = new Map();
+                projectFiles.forEach(file => {
+                    originalFilesMap.set(file.path, file.content);
+                });
+                setOriginalFiles(originalFilesMap);
                 
                 if (projectFiles.length > 0) {
                     setActiveFile({ path: projectFiles[0].path, content: projectFiles[0].content });
@@ -1722,6 +1895,14 @@ MIT License - see LICENSE file for details`,
                 ];
                 
                 setFiles(projectStructureFiles);
+                
+                // Initialize original files tracking for default project
+                const originalFilesMap = new Map();
+                projectStructureFiles.forEach(file => {
+                    originalFilesMap.set(file.path, file.content);
+                });
+                setOriginalFiles(originalFilesMap);
+                
                 setActiveFile({ path: projectStructureFiles[0].path, content: projectStructureFiles[0].content });
                 setActiveCode(projectStructureFiles[0].content);
             }
@@ -1773,10 +1954,12 @@ MIT License - see LICENSE file for details`,
                             messages={messages}
                             logs={logs}
                             files={files}
+                            fileChanges={fileChanges}
                             isLoading={isGenerating}
                             onSend={handleSend}
                             onAcceptAll={handleAcceptAll}
                             onRejectAll={handleRejectAll}
+                            onOpenChangeManager={() => setShowChangeManager(true)}
                             onModelChange={setSelectedModel}
                             selectedModel={selectedModel}
                             isAutoMode={isAutoMode}
@@ -1789,6 +1972,15 @@ MIT License - see LICENSE file for details`,
             <UpgradeModal 
                 isOpen={upgradeModalOpen} 
                 onClose={() => setUpgradeModalOpen(false)} 
+            />
+            <ChangeManager
+                changes={fileChanges}
+                onAcceptChange={acceptChange}
+                onRejectChange={rejectChange}
+                onAcceptAll={acceptAllChanges}
+                onRejectAll={rejectAllChanges}
+                isVisible={showChangeManager}
+                onClose={() => setShowChangeManager(false)}
             />
         </>
     );
