@@ -102,13 +102,15 @@ export default function PricingPage() {
       setPaymentStatus("success");
       upgradePlan(tier.name);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Payment failed with error:', error);
       let errorMessage = 'An unknown error occurred.';
-      if (error.name === 'WalletSignTransactionError') {
-        errorMessage = 'Transaction signing was rejected. Please try again.';
-      } else if (error.message) {
-        errorMessage = error.message;
+      if (error instanceof Error) {
+        if (error.name === 'WalletSignTransactionError') {
+          errorMessage = 'Transaction signing was rejected. Please try again.';
+        } else {
+          errorMessage = error.message;
+        }
       }
       setPaymentStatus("error");
       setPaymentError(errorMessage);

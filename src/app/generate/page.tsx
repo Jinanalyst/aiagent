@@ -42,7 +42,7 @@ export default function GeneratePage() {
         }
     };
     
-    const availableModels = Object.entries(allModels).filter(([key, model]) => 
+    const availableModels = Object.entries(allModels).filter(([, model]) => 
         user ? model.plans.includes(user.plan) : model.plans.includes('FREE')
     );
 

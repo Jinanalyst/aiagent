@@ -21,7 +21,6 @@ import {
   Brain, 
   Network, 
   HardDrive,
-  Trash2
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -100,7 +99,7 @@ Use icons from lucide-react for logos.`,
     { id: 'backups', label: 'Backups', icon: HardDrive },
   ] as const;
 
-  const updateSetting = (key: string, value: any) => {
+  const updateSetting = (key: string, value: unknown) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
@@ -435,7 +434,7 @@ Use icons from lucide-react for logos.`,
                       return (
                         <div className="text-center py-8">
                           <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                          <p className="text-gray-400">You're not part of any teams yet</p>
+                          <p className="text-gray-400">You&apos;re not part of any teams yet</p>
                           <p className="text-sm text-gray-500">Create a team or ask someone to invite you</p>
                         </div>
                       );
@@ -443,7 +442,7 @@ Use icons from lucide-react for logos.`,
 
                     return (
                       <div className="space-y-4">
-                        {teams.map((team: any) => (
+                        {teams.map((team: {id: string; name: string; members: unknown[]; plan: string; settings: {sharedCredits: number}; ownerId: string}) => (
                           <div key={team.id} className="bg-gray-700 rounded-lg p-4">
                             <div className="flex items-center justify-between">
                               <div>

@@ -59,7 +59,7 @@ export default function DashboardPage() {
                         ) : (
                             <div className="text-center border-2 border-dashed border-gray-300 rounded-lg p-12">
                                 <h2 className="text-2xl font-semibold mb-2">Welcome to your Dashboard!</h2>
-                                <p className="text-gray-500 mb-6">You don't have any projects yet.</p>
+                                <p className="text-gray-500 mb-6">You don&apos;t have any projects yet.</p>
                                 <Link href="/generate" passHref>
                                      <Button variant="default">Start your first project</Button>
                                 </Link>

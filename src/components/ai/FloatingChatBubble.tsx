@@ -1,26 +1,57 @@
 "use client";
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ArrowUp } from 'lucide-react';
-import { LandingPageChat } from './LandingPageChat';
+import { Input } from '@/components/ui/input';
+import { MessageSquare, Send } from 'lucide-react';
 
 export function FloatingChatBubble() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const handleSend = () => {
+    if (message.trim()) {
+      // Handle message sending logic here
+      console.log('Sending message:', message);
+      setMessage('');
+    }
+  };
+
   return (
-    <div className="fixed bottom-8 right-8 z-50">
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            size="lg"
-            className="rounded-full h-16 w-16 bg-gray-800/80 dark:bg-white/80 text-white dark:text-black hover:bg-gray-700 dark:hover:bg-gray-200 backdrop-blur-md shadow-lg"
-          >
-            Ask Lovable...
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-96 p-0 border-none shadow-2xl mr-4" side="top" align="end">
-          <LandingPageChat />
-        </PopoverContent>
-      </Popover>
+    <div className="fixed bottom-4 right-4 z-50">
+      {isOpen ? (
+        <div className="bg-white rounded-lg shadow-lg p-4 w-80 border">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold">Chat with AI</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsOpen(false)}
+            >
+              ×
+            </Button>
+          </div>
+          <div className="flex space-x-2">
+            <Input
+              placeholder="Ask me anything..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              className="flex-1"
+            />
+            <Button onClick={handleSend} size="sm">
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <Button
+          onClick={() => setIsOpen(true)}
+          className="rounded-full h-12 w-12 p-0 shadow-lg"
+        >
+          <MessageSquare className="h-6 w-6" />
+        </Button>
+      )}
     </div>
   );
 } 

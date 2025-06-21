@@ -25,7 +25,7 @@ const navItems = [
 
 export default function SettingsPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  useSearchParams();
   const { projects, updateProject, activeProjectId } = useProjects();
   const { disconnect } = useWallet();
 

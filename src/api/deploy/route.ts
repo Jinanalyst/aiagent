@@ -8,11 +8,11 @@ import JSZip from 'jszip';
 const execAsync = promisify(exec);
 
 // Platform-specific deployment functions
-async function deployToVercel(tempDir: string, projectName: string) {
+async function deployToVercel(tempDir: string) {
   // Check if user is logged into Vercel
   try {
     await execAsync('npx vercel whoami', { timeout: 10000 });
-  } catch (authError) {
+  } catch {
     throw new Error('Vercel authentication required. Please run "npx vercel login" in your terminal.');
   }
 
@@ -30,7 +30,7 @@ async function deployToVercel(tempDir: string, projectName: string) {
   return deploymentUrl;
 }
 
-async function deployToNetlify(tempDir: string, projectName: string) {
+async function deployToNetlify(tempDir: string) {
   // Create netlify.toml configuration
   const netlifyConfig = `[build]
   command = "npm run build"
@@ -49,7 +49,7 @@ async function deployToNetlify(tempDir: string, projectName: string) {
   // Check if Netlify CLI is installed
   try {
     await execAsync('netlify --version', { timeout: 10000 });
-  } catch (error) {
+  } catch {
     throw new Error('Netlify CLI not found. Please install it with "npm install -g netlify-cli" and run "netlify login".');
   }
 
@@ -67,7 +67,7 @@ async function deployToNetlify(tempDir: string, projectName: string) {
   return deploymentUrl;
 }
 
-async function deployToRailway(tempDir: string, projectName: string) {
+async function deployToRailway(tempDir: string) {
   // Create railway.json configuration
   const railwayConfig = {
     build: {
@@ -85,7 +85,7 @@ async function deployToRailway(tempDir: string, projectName: string) {
   // Check if Railway CLI is installed
   try {
     await execAsync('railway --version', { timeout: 10000 });
-  } catch (error) {
+  } catch {
     throw new Error('Railway CLI not found. Please install it with "npm install -g @railway/cli" and run "railway login".');
   }
 
@@ -259,13 +259,13 @@ module.exports = {
     try {
       switch (platform) {
         case 'vercel':
-          deploymentUrl = await deployToVercel(tempDir, projectName);
+          deploymentUrl = await deployToVercel(tempDir);
           break;
         case 'netlify':
-          deploymentUrl = await deployToNetlify(tempDir, projectName);
+          deploymentUrl = await deployToNetlify(tempDir);
           break;
         case 'railway':
-          deploymentUrl = await deployToRailway(tempDir, projectName);
+          deploymentUrl = await deployToRailway(tempDir);
           break;
         case 'github':
           deploymentUrl = await deployToGitHubPages(tempDir, projectName);

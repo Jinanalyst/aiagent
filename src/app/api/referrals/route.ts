@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 
     if (action === 'get_stats') {
       // Get referral stats for a user
-      const { userId } = await req.json();
+      const requestData = await req.json();
       
       // In a real app, you'd fetch from database
       // For demo, return mock data

@@ -11,7 +11,7 @@ import {
   X, 
   Users, 
   Plus, 
-  Mail, 
+ 
   Copy, 
   Check,
   ArrowLeft

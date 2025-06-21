@@ -2,10 +2,9 @@ import { Navigation } from "@/components/ui/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { UserNav } from "@/components/user/UserNav";
 
 export default function AccountPage() {
-    const { connected, publicKey, disconnect } = useWallet();
+    const { connected, disconnect } = useWallet();
 
     if (!connected) {
         return (

@@ -100,7 +100,7 @@ export default function JoinTeamPage() {
 
       // Redirect to dashboard with success message
       router.push('/dashboard?joined=' + team.name);
-    } catch (error) {
+          } catch {
       setError('Failed to join team. Please try again.');
     } finally {
       setJoining(false);

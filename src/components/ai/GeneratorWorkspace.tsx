@@ -14,6 +14,10 @@ import { GeneratedFile, Project } from "@/types";
 import { Message } from "ai/react";
 import { useProjects } from "@/hooks/useProjects";
 import { ProfileSidebar } from "@/components/ui/profile-sidebar";
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, Download, ExternalLink, RefreshCw } from 'lucide-react';
 
 interface GeneratorWorkspaceProps {
     prompt?: string;
@@ -32,9 +36,17 @@ interface ProjectPlan {
     files: FilePlan[];
 }
 
+const allModels = {
+    'gpt-4o': { name: 'GPT-4o', cost: 1, plans: ['FREE', 'PRO', 'PREMIUM'] },
+    'claude-3-opus-20240229': { name: 'Claude 3 Opus', cost: 3, plans: ['PRO', 'PREMIUM'] },
+    'claude-3.5-sonnet-20240620': { name: 'Claude 3.5 Sonnet', cost: 2, plans: ['FREE', 'PRO', 'PREMIUM'] },
+    'claude-3-5-sonnet-20241022': { name: 'Claude 3.5 Sonnet (New)', cost: 2, plans: ['FREE', 'PRO', 'PREMIUM'] },
+    'claude-3-5-haiku-20241022': { name: 'Claude 3.5 Haiku', cost: 1, plans: ['FREE', 'PRO', 'PREMIUM'] },
+};
+
 export function GeneratorWorkspace({ prompt: initialPrompt, model, initialProject }: GeneratorWorkspaceProps) {
     const { user, deductCredits } = useUser();
-    const { addProject } = useProjects();
+    const { addProject, createProject, activeProject } = useProjects();
     
     const [messages, setMessages] = useState<Message[]>([]);
     const [projectName, setProjectName] = useState("New AI Project");
@@ -53,7 +65,9 @@ export function GeneratorWorkspace({ prompt: initialPrompt, model, initialProjec
     const [selectedModel, setSelectedModel] = useState('gpt-4o');
     const [isAutoMode, setIsAutoMode] = useState(true);
     const abortControllerRef = useRef<AbortController | null>(null);
-
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [currentStep, setCurrentStep] = useState('Analyzing your request...');
+    const [progress, setProgress] = useState(0);
 
     useEffect(() => {
         if(initialProject) {
@@ -380,7 +394,7 @@ export function GeneratorWorkspace({ prompt: initialPrompt, model, initialProjec
             });
     };
 
-    const handleGenerate = async (prompt: string) => {
+    const handleGenerate = async () => {
         if (!user) {
             setUpgradeModalOpen(true);
             return;
@@ -393,9 +407,9 @@ export function GeneratorWorkspace({ prompt: initialPrompt, model, initialProjec
             return;
         }
         
-        setProjectName(`Project for "${prompt.substring(0, 40)}..."`);
-        setMessages([{ id: 'user-prompt', role: 'user', content: prompt, createdAt: new Date() }]);
-        createPlan(prompt);
+        setProjectName(`Project for "${initialPrompt.substring(0, 40)}..."`);
+        setMessages([{ id: 'user-prompt', role: 'user', content: initialPrompt, createdAt: new Date() }]);
+        createPlan(initialPrompt);
     };
     
     const handleRetry = async () => {
@@ -449,7 +463,7 @@ export function GeneratorWorkspace({ prompt: initialPrompt, model, initialProjec
     useEffect(() => {
         if (effectRan.current === false) {
             if (initialPrompt && !initialProject) {
-                handleGenerate(initialPrompt);
+                handleGenerate();
             }
         }
     
@@ -459,6 +473,32 @@ export function GeneratorWorkspace({ prompt: initialPrompt, model, initialProjec
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [initialPrompt, initialProject]);
 
+    if (isGenerating) {
+        return (
+            <div className="flex h-screen bg-gray-50">
+                <div className="flex-1 flex items-center justify-center">
+                    <Card className="w-96">
+                        <CardHeader>
+                            <CardTitle className="flex items-center space-x-2">
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                                <span>Generating Your Project</span>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="text-sm text-gray-600">{currentStep}</div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div 
+                                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                                    style={{ width: `${progress}%` }}
+                                />
+                            </div>
+                            <div className="text-xs text-gray-500">{Math.round(progress)}% complete</div>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <>

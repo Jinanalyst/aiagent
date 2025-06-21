@@ -1,73 +1,110 @@
 "use client";
 
 import { useState } from 'react';
-import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Plus, ArrowUp } from 'lucide-react';
-import { WalletConnect } from '../wallet/WalletConnect';
-import Link from 'next/link';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
+import { Send, Loader2, Sparkles } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
-// Mock icons for Workspace and Supabase
-const WorkspaceIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M3.5 4.5L8 2L12.5 4.5V11.5L8 14L3.5 11.5V4.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M8 7.5L3.5 11.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M8 7.5L12.5 11.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M8 7.5V14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-const SupabaseIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12.235 2.189L1.353 9.02a2.818 2.818 0 00-.334 4.026l7.03 8.789a2.818 2.818 0 004.298-.03l9.28-11.23a2.818 2.818 0 00-2.48-4.385H12.235z" fill="currentColor"></path>
-    </svg>
-);
+interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
 
 export function LandingPageChat() {
-  const [prompt, setPrompt] = useState('');
-  const [showWalletConnect, setShowWalletConnect] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+
+  const handleSend = async () => {
+    if (!input.trim()) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: input,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+
+    // Simulate AI response
+    setTimeout(() => {
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: "I'd be happy to help you build that! Let me create a project for you.",
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, aiMessage]);
+      setIsLoading(false);
+      
+      // Redirect to generate page with the prompt
+      setTimeout(() => {
+        router.push(`/generate?prompt=${encodeURIComponent(input)}`);
+      }, 1000);
+    }, 2000);
+  };
 
   return (
-    <div className="relative w-full max-w-2xl">
-      <div className="bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-xl shadow-lg border border-black/10 dark:border-white/10">
-        <Textarea
-          placeholder="Ask Lovable to create a blog a..."
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          className="w-full bg-transparent border-none rounded-xl p-4 min-h-[56px] resize-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground"
-        />
-        <div className="flex items-center justify-between p-2">
-            <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-black/5 dark:hover:bg-white/10">
-                    <Plus className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" className="text-muted-foreground hover:bg-black/5 dark:hover:bg-white/10">
-                    <WorkspaceIcon />
-                    <span className="ml-2">Workspace</span>
-                </Button>
-                <Button variant="ghost" className="text-muted-foreground hover:bg-black/5 dark:hover:bg-white/10">
-                    <SupabaseIcon />
-                    <span className="ml-2">Supabase</span>
-                </Button>
+    <Card className="w-full max-w-md mx-auto">
+      <CardContent className="p-4">
+        <div className="flex items-center space-x-2 mb-4">
+          <Sparkles className="h-5 w-5 text-blue-500" />
+          <h3 className="font-semibold">AI Assistant</h3>
+        </div>
+        
+        <div className="space-y-3 mb-4 max-h-60 overflow-y-auto">
+          {messages.length === 0 && (
+            <div className="text-sm text-gray-500 text-center py-4">
+              Ask me to build anything!
             </div>
-          <Button size="icon" disabled={!prompt.trim()} className="bg-primary hover:bg-primary/90 rounded-full">
-            <ArrowUp className="h-4 w-4" />
+          )}
+          
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={`text-sm p-2 rounded-lg ${
+                message.role === 'user'
+                  ? 'bg-blue-500 text-white ml-4'
+                  : 'bg-gray-100 text-gray-800 mr-4'
+              }`}
+            >
+              {message.content}
+            </div>
+          ))}
+          
+          {isLoading && (
+            <div className="flex items-center space-x-2 text-sm text-gray-500 mr-4">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Thinking...</span>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex space-x-2">
+          <Input
+            placeholder="Build me a landing page..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+            disabled={isLoading}
+          />
+          <Button
+            onClick={handleSend}
+            disabled={!input.trim() || isLoading}
+            size="sm"
+          >
+            <Send className="h-4 w-4" />
           </Button>
         </div>
-      </div>
-      <div className="h-14">
-        {showWalletConnect ? (
-          <WalletConnect />
-        ) : (
-          <Button
-            size="lg"
-            className="bg-white text-black border-2 border-gray-200 hover:bg-gray-100 hover:text-black"
-            onClick={() => setShowWalletConnect(true)}
-          >
-            Start Building for Free
-          </Button>
-        )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 } 
