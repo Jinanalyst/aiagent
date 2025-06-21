@@ -203,7 +203,7 @@ export function ProfileSidebar({ className = '' }: ProfileSidebarProps) {
               <Button
                 variant="ghost"
                 className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800"
-                onClick={() => router.push('/support')}
+                onClick={() => router.push('/settings')}
               >
                 <Settings className="h-4 w-4 mr-3" />
                 Settings
