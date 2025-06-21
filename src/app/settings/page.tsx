@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ProfileSidebar } from '@/components/ui/profile-sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,12 +16,13 @@ import {
   Users, 
   Coins, 
   Grid3X3, 
-  Flask, 
+  Beaker, 
   Brain, 
   Network, 
   HardDrive,
   Trash2
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 type SettingsSection = 
   | 'general' 
@@ -37,7 +38,18 @@ type SettingsSection =
 
 export default function SettingsPage() {
   const { user } = useUser();
+  const router = useRouter();
   const [activeSection, setActiveSection] = useState<SettingsSection>('general');
+
+  // Handle URL parameters for direct section navigation
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const section = urlParams.get('section') as SettingsSection;
+    if (section && settingsSections.some(s => s.id === section)) {
+      setActiveSection(section);
+    }
+  }, []);
+
   const [settings, setSettings] = useState({
     // General
     deleteAllChats: false,
@@ -81,7 +93,7 @@ Use icons from lucide-react for logos.`,
     { id: 'team', label: 'Team', icon: Users },
     { id: 'tokens', label: 'Tokens', icon: Coins },
     { id: 'applications', label: 'Applications', icon: Grid3X3 },
-    { id: 'feature-previews', label: 'Feature Previews', icon: Flask },
+    { id: 'feature-previews', label: 'Feature Previews', icon: Beaker },
     { id: 'knowledge', label: 'Knowledge', icon: Brain },
     { id: 'network', label: 'Network', icon: Network },
     { id: 'backups', label: 'Backups', icon: HardDrive },
@@ -378,6 +390,79 @@ Use icons from lucide-react for logos.`,
                     onChange={(e) => updateSetting('timeout', e.target.value)}
                     className="bg-gray-800 border-gray-600 text-white w-32"
                   />
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'team':
+        return (
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-6">Team</h2>
+              
+              <div className="space-y-6">
+                <div className="bg-gray-800 rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-medium text-white">Create a team</h3>
+                      <p className="text-sm text-gray-400">Collaborate with team members on AI projects</p>
+                    </div>
+                    <Button
+                      onClick={() => router.push('/team/create')}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      Create a team
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Current Teams */}
+                <div className="bg-gray-800 rounded-lg p-6">
+                  <h3 className="text-lg font-medium text-white mb-4">Your teams</h3>
+                  {user && (() => {
+                    const userTeams = JSON.parse(localStorage.getItem(`user_teams_${user.walletAddress}`) || '[]');
+                    const allTeams = JSON.parse(localStorage.getItem('teams') || '{}');
+                    const teams = userTeams.map((teamId: string) => allTeams[teamId]).filter(Boolean);
+                    
+                    if (teams.length === 0) {
+                      return (
+                        <div className="text-center py-8">
+                          <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                          <p className="text-gray-400">You're not part of any teams yet</p>
+                          <p className="text-sm text-gray-500">Create a team or ask someone to invite you</p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="space-y-4">
+                        {teams.map((team: any) => (
+                          <div key={team.id} className="bg-gray-700 rounded-lg p-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4 className="font-medium text-white">{team.name}</h4>
+                                <p className="text-sm text-gray-400">
+                                  {team.members.length} members • {team.plan} plan • {team.settings.sharedCredits} credits
+                                </p>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <span className={`px-2 py-1 rounded text-xs ${
+                                  team.ownerId === user.walletAddress 
+                                    ? 'bg-blue-600 text-white' 
+                                    : 'bg-gray-600 text-gray-300'
+                                }`}>
+                                  {team.ownerId === user.walletAddress ? 'Owner' : 'Member'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>

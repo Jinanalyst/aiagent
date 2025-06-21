@@ -230,7 +230,7 @@ export function ProfileSidebar({ className = '' }: ProfileSidebarProps) {
               <Button
                 variant="ghost"
                 className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800"
-                onClick={() => router.push('/account')}
+                onClick={() => router.push('/settings?section=team')}
               >
                 <User className="h-4 w-4 mr-3" />
                 Select Account
