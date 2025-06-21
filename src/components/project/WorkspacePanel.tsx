@@ -71,6 +71,8 @@ const getStatusText = (status: string) => {
 
 export function WorkspacePanel({ files, activeFile, onFileSelect, onCodeChange, activeCode }: WorkspacePanelProps) {
     const [tab, setTab] = useState('code');
+    const [isEditing, setIsEditing] = useState(false);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     
     // Group files by directory
     const fileTree = React.useMemo(() => {
@@ -104,6 +106,45 @@ export function WorkspacePanel({ files, activeFile, onFileSelect, onCodeChange, 
     const handlePreviewStatusUpdate = (status: string) => {
         console.log(`[Preview]: ${status}`);
     };
+
+    const handleCodeEdit = (newCode: string) => {
+        onCodeChange(newCode);
+        setHasUnsavedChanges(true);
+    };
+
+    const handleSaveChanges = () => {
+        setHasUnsavedChanges(false);
+        setIsEditing(false);
+        // The changes are already saved through onCodeChange
+    };
+
+    const handleDiscardChanges = () => {
+        if (activeFile) {
+            onCodeChange(activeFile.content); // Reset to original content
+        }
+        setHasUnsavedChanges(false);
+        setIsEditing(false);
+    };
+
+    const toggleEditMode = () => {
+        if (isEditing && hasUnsavedChanges) {
+            // Ask user if they want to save changes
+            const shouldSave = confirm('You have unsaved changes. Do you want to save them?');
+            if (shouldSave) {
+                handleSaveChanges();
+            } else {
+                handleDiscardChanges();
+            }
+        } else {
+            setIsEditing(!isEditing);
+        }
+    };
+
+    // Reset editing state when switching files
+    React.useEffect(() => {
+        setIsEditing(false);
+        setHasUnsavedChanges(false);
+    }, [activeFile]);
 
     const renderFileTree = () => {
         const { tree, rootFiles } = fileTree;
@@ -242,24 +283,67 @@ export function WorkspacePanel({ files, activeFile, onFileSelect, onCodeChange, 
                                                 <span>{getFileIcon(activeFile.path)}</span>
                                                 <span className="text-sm font-medium">{activeFile.path}</span>
                                                 {getStatusIcon(activeFile.status)}
+                                                {isEditing && (
+                                                    <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
+                                                        Editing
+                                                    </span>
+                                                )}
+                                                {hasUnsavedChanges && (
+                                                    <span className="text-xs bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 px-2 py-1 rounded">
+                                                        Unsaved
+                                                    </span>
+                                                )}
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <span className="text-xs text-gray-500">{getStatusText(activeFile.status)}</span>
                                                 {activeFile.status === 'completed' && (
-                                                    <Button 
-                                                        size="sm" 
-                                                        variant="outline"
-                                                        onClick={() => navigator.clipboard.writeText(activeFile.content)}
-                                                    >
-                                                        Copy
-                                                    </Button>
+                                                    <>
+                                                        <Button 
+                                                            size="sm" 
+                                                            variant="outline"
+                                                            onClick={() => navigator.clipboard.writeText(activeFile.content)}
+                                                        >
+                                                            Copy
+                                                        </Button>
+                                                        <Button 
+                                                            size="sm" 
+                                                            variant={isEditing ? "default" : "outline"}
+                                                            onClick={toggleEditMode}
+                                                        >
+                                                            {isEditing ? "Done" : "Edit"}
+                                                        </Button>
+                                                        {isEditing && hasUnsavedChanges && (
+                                                            <>
+                                                                <Button 
+                                                                    size="sm" 
+                                                                    variant="default"
+                                                                    onClick={handleSaveChanges}
+                                                                    className="bg-green-600 hover:bg-green-700"
+                                                                >
+                                                                    Save
+                                                                </Button>
+                                                                <Button 
+                                                                    size="sm" 
+                                                                    variant="outline"
+                                                                    onClick={handleDiscardChanges}
+                                                                    className="text-red-600 border-red-300 hover:bg-red-50"
+                                                                >
+                                                                    Discard
+                                                                </Button>
+                                                            </>
+                                                        )}
+                                                    </>
                                                 )}
                                             </div>
                                         </div>
                                         
                                         {/* Editor */}
                                         <div className="flex-1">
-                                            <CodeEditor code={activeCode} setCode={onCodeChange} />
+                                            <CodeEditor 
+                                                code={activeCode} 
+                                                setCode={isEditing ? handleCodeEdit : () => {}} 
+                                                readOnly={!isEditing}
+                                            />
                                         </div>
                                     </>
                                 ) : (

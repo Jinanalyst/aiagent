@@ -7,6 +7,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { Project } from "@/types";
 import { format } from 'date-fns';
 import { Navigation } from "@/components/ui/navigation";
+import { ProfileSidebar } from "@/components/ui/profile-sidebar";
 
 function ProjectCard({ project }: { project: Project }) {
     return (
@@ -27,41 +28,44 @@ export default function DashboardPage() {
     const { projects, loading } = useProjects();
 
     return (
-      <>
-        <Navigation />
-        <div className="container mx-auto p-8">
-            <header className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-bold">Dashboard</h1>
-                <Link href="/generate" passHref>
-                    <Button>
-                        <Plus className="mr-2 h-4 w-4" />
-                        New Project
-                    </Button>
-                </Link>
-            </header>
-
-            <main>
-                {loading ? (
-                    <div className="text-center">
-                        <p>Loading projects...</p>
-                    </div>
-                ) : projects.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                       {projects.map(project => (
-                           <ProjectCard key={project.id} project={project} />
-                       ))}
-                    </div>
-                ) : (
-                    <div className="text-center border-2 border-dashed border-gray-300 rounded-lg p-12">
-                        <h2 className="text-2xl font-semibold mb-2">Welcome to your Dashboard!</h2>
-                        <p className="text-gray-500 mb-6">You don't have any projects yet.</p>
+        <>
+            <ProfileSidebar />
+            <div className="flex flex-col min-h-screen bg-gray-100">
+                <Navigation />
+                <div className="flex-1 container mx-auto p-8">
+                    <header className="flex justify-between items-center mb-8">
+                        <h1 className="text-3xl font-bold">Dashboard</h1>
                         <Link href="/generate" passHref>
-                             <Button variant="default">Start your first project</Button>
+                            <Button>
+                                <Plus className="mr-2 h-4 w-4" />
+                                New Project
+                            </Button>
                         </Link>
-                    </div>
-                )}
-            </main>
-        </div>
-      </>
+                    </header>
+
+                    <main>
+                        {loading ? (
+                            <div className="text-center">
+                                <p>Loading projects...</p>
+                            </div>
+                        ) : projects.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                               {projects.map(project => (
+                                   <ProjectCard key={project.id} project={project} />
+                               ))}
+                            </div>
+                        ) : (
+                            <div className="text-center border-2 border-dashed border-gray-300 rounded-lg p-12">
+                                <h2 className="text-2xl font-semibold mb-2">Welcome to your Dashboard!</h2>
+                                <p className="text-gray-500 mb-6">You don't have any projects yet.</p>
+                                <Link href="/generate" passHref>
+                                     <Button variant="default">Start your first project</Button>
+                                </Link>
+                            </div>
+                        )}
+                    </main>
+                </div>
+            </div>
+        </>
     )
 } 

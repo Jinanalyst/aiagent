@@ -16,27 +16,31 @@ import 'prismjs/components/prism-tsx';
 interface CodeEditorProps {
     code: string;
     setCode: (code: string) => void;
+    readOnly?: boolean;
 }
 
-export const CodeEditor = ({ code, setCode }: CodeEditorProps) => {
+export const CodeEditor = ({ code, setCode, readOnly = false }: CodeEditorProps) => {
   const currentCode = typeof code === 'string' ? code : '';
   
   return (
     <div className="relative h-full font-mono text-sm bg-[#f8f8f8] border-l">
-        <div className="absolute top-2 right-4 text-xs text-gray-400">TypeScript</div>
+        <div className="absolute top-2 right-4 text-xs text-gray-400 z-10">TypeScript</div>
          <Editor
             value={currentCode}
-            onValueChange={code => setCode(code)}
+            onValueChange={readOnly ? () => {} : setCode}
             highlight={code => Prism.highlight(code, Prism.languages.tsx, 'tsx')}
             padding={16}
-            className="code-editor"
+            className={`code-editor ${readOnly ? 'read-only' : ''}`}
             style={{
                 fontFamily: '"Fira Mono", "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", Monaco, "Lucida Console", monospace',
                 fontSize: 14,
                 lineHeight: 1.5,
                 height: '100%',
                 overflow: 'auto',
+                backgroundColor: readOnly ? '#f9f9f9' : '#f8f8f8',
+                opacity: readOnly ? 0.8 : 1,
             }}
+            readOnly={readOnly}
         />
     </div>
   );

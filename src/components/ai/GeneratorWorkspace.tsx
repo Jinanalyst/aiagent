@@ -13,6 +13,7 @@ import { retryWithBackoff, classifyError } from "@/lib/utils";
 import { GeneratedFile, Project } from "@/types";
 import { Message } from "ai/react";
 import { useProjects } from "@/hooks/useProjects";
+import { ProfileSidebar } from "@/components/ui/profile-sidebar";
 
 interface GeneratorWorkspaceProps {
     prompt?: string;
@@ -460,55 +461,56 @@ export function GeneratorWorkspace({ prompt: initialPrompt, model, initialProjec
 
 
     return (
-        <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 text-black dark:text-white">
-             <ProjectHeader 
-                projectName={projectName}
-                onDownload={handleDownload}
-                onRetry={handleRetry}
-                onDeploy={handleDeploy}
-                isDeploying={isDeploying}
-                deploymentStatus={deploymentStatus}
-            />
-            <div className="flex-1 p-4 flex flex-col min-h-0">
-                <ResizablePanelGroup direction="horizontal" className="flex-1 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <ResizablePanel defaultSize={40} minSize={20}>
-                        <div className="h-full p-1">
-                            <ChatPanel
-                                messages={messages}
-                                onSend={handleSend}
-                                isLoading={isLoading}
-                                logs={logs}
-                                files={files}
-                                onAcceptAll={handleAcceptAll}
-                                onRejectAll={handleRejectAll}
-                                selectedModel={selectedModel}
-                                onModelChange={setSelectedModel}
-                                isAutoMode={isAutoMode}
-                                onAutoModeChange={setIsAutoMode}
-                                onCancel={handleCancel}
-                            />
-                        </div>
-                    </ResizablePanel>
-                    <ResizableHandle withHandle />
-                    <ResizablePanel defaultSize={60} minSize={30}>
-                        <div className="h-full p-1">
-                            <WorkspacePanel 
-                                files={files}
-                                activeFile={activeFile}
-                                onFileSelect={setActiveFile}
-                                activeCode={activeCode}
-                                onCodeChange={setCodeForActiveFile}
-                            />
-                        </div>
-                    </ResizablePanel>
-                </ResizablePanelGroup>
-            </div>
-            {isUpgradeModalOpen && (
-                <UpgradeModal
-                    isOpen={isUpgradeModalOpen}
-                    onClose={() => setUpgradeModalOpen(false)}
+        <>
+            <ProfileSidebar />
+            <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 text-black dark:text-white">
+                <ProjectHeader 
+                    projectName={projectName}
+                    onDownload={handleDownload}
+                    onRetry={handleRetry}
+                    onDeploy={handleDeploy}
+                    isDeploying={isDeploying}
+                    deploymentStatus={deploymentStatus}
                 />
-            )}
-        </div>
+                <div className="flex-1 p-4 flex flex-col min-h-0">
+                    <ResizablePanelGroup direction="horizontal" className="flex-1 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <ResizablePanel defaultSize={40} minSize={20}>
+                            <div className="h-full p-1">
+                                <ChatPanel
+                                    messages={messages}
+                                    onSend={handleSend}
+                                    isLoading={isLoading}
+                                    logs={logs}
+                                    files={files}
+                                    onAcceptAll={handleAcceptAll}
+                                    onRejectAll={handleRejectAll}
+                                    selectedModel={selectedModel}
+                                    onModelChange={setSelectedModel}
+                                    isAutoMode={isAutoMode}
+                                    onAutoModeChange={setIsAutoMode}
+                                    onCancel={handleCancel}
+                                />
+                            </div>
+                        </ResizablePanel>
+                        <ResizableHandle withHandle />
+                        <ResizablePanel defaultSize={60} minSize={30}>
+                            <div className="h-full p-1">
+                                <WorkspacePanel 
+                                    files={files}
+                                    activeFile={activeFile}
+                                    onFileSelect={setActiveFile}
+                                    activeCode={activeCode}
+                                    onCodeChange={setCodeForActiveFile}
+                                />
+                            </div>
+                        </ResizablePanel>
+                    </ResizablePanelGroup>
+                </div>
+                <UpgradeModal 
+                    isOpen={isUpgradeModalOpen} 
+                    onClose={() => setUpgradeModalOpen(false)} 
+                />
+            </div>
+        </>
     );
 } 
