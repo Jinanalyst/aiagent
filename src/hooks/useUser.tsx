@@ -21,16 +21,15 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const { publicKey } = useWallet();
+export const UserProvider = ({ children, walletPublicKey }: { children: ReactNode, walletPublicKey: string | null }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const syncUser = () => {
       setLoading(true);
-      if (publicKey) {
-        const walletAddress = publicKey.toBase58();
+      if (walletPublicKey) {
+        const walletAddress = walletPublicKey;
         const storedUsers = JSON.parse(localStorage.getItem('users') || '{}');
         let currentUser = storedUsers[walletAddress];
 
@@ -53,7 +52,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     };
 
     syncUser();
-  }, [publicKey]);
+  }, [walletPublicKey]);
 
   const handleSetUser = (updatedUser: User | null) => {
      setUser(updatedUser);

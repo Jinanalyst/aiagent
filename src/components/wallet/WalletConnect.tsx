@@ -29,9 +29,6 @@ export const WalletConnect: FC = () => {
   }
 
   return (
-    <WalletMultiButton className="!bg-primary !text-primary-foreground hover:!bg-primary/90">
-      <Wallet className="w-4 h-4 mr-2" />
-      Connect Wallet
-    </WalletMultiButton>
+    <WalletMultiButton />
   );
 }; 
