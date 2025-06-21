@@ -21,9 +21,8 @@ interface WorkspacePanelProps {
     files: GeneratedFile[];
     activeFile: GeneratedFile | null;
     onFileSelect: (file: GeneratedFile) => void;
-    code: string;
-    setCode: (code: string) => void;
-    logs: string[];
+    onCodeChange: (newCode: string) => void;
+    activeCode: string;
 }
 
 // Mock code to display in the editor
@@ -47,60 +46,71 @@ const HeroSection = () => {
 export default HeroSection;
 `.trim();
 
-export function WorkspacePanel({ files, activeFile, onFileSelect, code, setCode, logs }: WorkspacePanelProps) {
+export function WorkspacePanel({ files, activeFile, onFileSelect, onCodeChange, activeCode }: WorkspacePanelProps) {
+    const [tab, setTab] = React.useState('code');
     
     const fileSystemForPreview = files.reduce((acc, file) => {
-        acc[file.path] = file.content;
+        if (file.status === 'completed') {
+            acc[file.path] = file.content;
+        }
         return acc;
     }, {} as { [key: string]: string });
 
     const handlePreviewStatusUpdate = (status: string) => {
-        // For now, we'll just log this to the console.
-        // In the future, we could add it to the agent log.
         console.log(`[Preview]: ${status}`);
     };
 
     return (
-        <div className="h-full flex flex-col bg-white">
-           <Tabs defaultValue="code" className="flex-1 flex flex-col">
-                <div className="px-4 border-b">
-                     <TabsList>
-                        <TabsTrigger value="code">Code</TabsTrigger>
-                        <TabsTrigger value="preview">Preview</TabsTrigger>
-                    </TabsList>
+        <div className="h-full flex flex-col bg-white dark:bg-gray-850">
+            <div className="flex-shrink-0 border-b dark:border-gray-700">
+                <div className="flex items-center h-12 px-4">
+                    <button 
+                        onClick={() => setTab('code')}
+                        className={`px-3 py-1 text-sm rounded-md ${tab === 'code' ? 'bg-gray-200 dark:bg-gray-700' : 'hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                    >
+                        Code
+                    </button>
+                    <button 
+                        onClick={() => setTab('preview')}
+                        className={`ml-2 px-3 py-1 text-sm rounded-md ${tab === 'preview' ? 'bg-gray-200 dark:bg-gray-700' : 'hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                    >
+                        Preview
+                    </button>
                 </div>
-                <TabsContent value="code" className="flex-1 flex flex-col overflow-y-auto">
-                    <ResizablePanelGroup direction="vertical">
-                        <ResizablePanel defaultSize={70}>
-                           <ResizablePanelGroup direction="horizontal">
-                                <ResizablePanel defaultSize={30} minSize={20}>
-                                    <FileExplorer files={files} onFileSelect={onFileSelect} activeFile={activeFile} />
-                                </ResizablePanel>
-                                <ResizableHandle withHandle />
-                                <ResizablePanel defaultSize={70}>
-                                    <CodeEditor code={code} setCode={setCode} />
-                                </ResizablePanel>
-                           </ResizablePanelGroup>
+            </div>
+
+            <div className="flex-1 min-h-0">
+                {tab === 'code' && (
+                    <ResizablePanelGroup direction="horizontal" className="h-full">
+                        <ResizablePanel defaultSize={20} minSize={15}>
+                            <FileExplorer 
+                                files={files.map(f => f.path)} 
+                                onFileSelect={(path) => {
+                                    const file = files.find(f => f.path === path);
+                                    if(file) onFileSelect(file);
+                                }} 
+                                activeFile={activeFile ? activeFile.path : null} 
+                            />
                         </ResizablePanel>
                         <ResizableHandle withHandle />
-                        <ResizablePanel defaultSize={30}>
-                           <Terminal logs={logs} />
+                        <ResizablePanel defaultSize={80}>
+                           <CodeEditor code={activeCode} setCode={onCodeChange} />
                         </ResizablePanel>
                     </ResizablePanelGroup>
-                </TabsContent>
-                <TabsContent value="preview" className="flex-1 bg-gray-50 p-4">
-                   {files.length > 0 ? (
-                     <PreviewPanel
-                       fileSystem={fileSystemForPreview}
-                       onStatusUpdate={handlePreviewStatusUpdate}
-                     />
-                   ) : (
-                     <div className="flex items-center justify-center h-full text-gray-500">
-                       No files generated yet to preview.
-                     </div>
-                   )}
-                </TabsContent>
-            </Tabs>
+                )}
+                {tab === 'preview' && (
+                     files.length > 0 && Object.keys(fileSystemForPreview).length > 0 ? (
+                        <PreviewPanel
+                          fileSystem={fileSystemForPreview}
+                          onStatusUpdate={handlePreviewStatusUpdate}
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-full text-gray-500">
+                          No completed files available to preview.
+                        </div>
+                      )
+                )}
+            </div>
         </div>
     );
 } 

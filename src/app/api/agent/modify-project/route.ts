@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 import { GeneratedFile } from '@/types';
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
+});
+
+const anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
 const SYSTEM_PROMPT = `
@@ -33,19 +38,39 @@ ${file.content}
 `).join('\n');
 
         const fullPrompt = `${SYSTEM_PROMPT}\n${fileDetails}\n\nUser Prompt: ${prompt}`;
+        let content: string | null = null;
+        
+        if (model.startsWith('gpt')) {
+            const response = await openai.chat.completions.create({
+                model: model,
+                messages: [{ role: 'system', content: fullPrompt }],
+                response_format: { type: "json_object" },
+            });
+            content = response.choices[0].message.content;
+        } else if (model.startsWith('claude')) {
+            const response = await anthropic.messages.create({
+                model: model,
+                max_tokens: 4096,
+                system: SYSTEM_PROMPT,
+                messages: [{ 
+                    role: 'user', 
+                    content: `Here is the current file structure:\n${fileDetails}\n\nUser Prompt: ${prompt}`
+                }],
+            });
+            const textBlock = response.content.find(block => block.type === 'text');
+            content = textBlock ? textBlock.text : null;
+        } else {
+            return NextResponse.json({ error: 'Unsupported model' }, { status: 400 });
+        }
 
-        const response = await openai.chat.completions.create({
-            model: model,
-            messages: [{ role: 'system', content: fullPrompt }],
-            response_format: { type: "json_object" },
-        });
-
-        const content = response.choices[0].message.content;
         if (!content) {
             return NextResponse.json({ error: 'No content in response' }, { status: 500 });
         }
+        
+        const jsonMatch = content.match(/```json\n([\s\S]*?)\n```|({[\s\S]*})/);
+        const jsonString = jsonMatch ? (jsonMatch[1] || jsonMatch[2]) : content;
 
-        const result = JSON.parse(content);
+        const result = JSON.parse(jsonString);
 
         return NextResponse.json({ files: result.files });
 

@@ -2,13 +2,25 @@
 import { useState, useEffect, useRef } from "react";
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Send, Paperclip, Mic, Bot, User, Terminal, ChevronUp, Image as ImageIcon, CircleX, CheckCircle, Square } from "lucide-react"
+import { Send, Paperclip, Bot, User, Terminal, ChevronUp, CircleX, CheckCircle, Square } from "lucide-react"
 import { Message } from 'ai/react';
 import { GeneratedFile } from "@/types";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const modelCosts: { [key: string]: number } = {
+    'gpt-4o': 1,
+    'claude-3-opus-20240229': 3,
+    'claude-3.5-sonnet-20240620': 2,
+};
+
+const modelDisplayNames: { [key: string]: string } = {
+    'gpt-4o': 'GPT-4o',
+    'claude-3-opus-20240229': 'Claude 3 Opus',
+    'claude-3.5-sonnet-20240620': 'Claude 4',
+};
 
 interface ChatEntry {
     type: 'message' | 'log';
@@ -32,8 +44,8 @@ interface ChatPanelProps {
     onCancel: () => void;
 }
 
-export function ChatPanel({ 
-    messages, logs, files, isLoading, onSend, 
+export function ChatPanel({
+    messages, logs, files, isLoading, onSend,
     onAcceptAll, onRejectAll, onModelChange, selectedModel,
     isAutoMode, onAutoModeChange, onCancel
 }: ChatPanelProps) {
@@ -48,18 +60,16 @@ export function ChatPanel({
             author: m.role === 'user' ? 'user' : 'AI',
             timestamp: m.createdAt?.toISOString() || new Date().toISOString()
         }));
-        
+
         const logEntries: ChatEntry[] = logs.map(log => {
             const timestampMatch = log.match(/^\[(.*?)\]/);
             let timestamp;
             if (timestampMatch) {
                 const parsedDate = new Date(timestampMatch[1]);
-                // Check if the parsed date is valid
                 if (!isNaN(parsedDate.getTime())) {
                     timestamp = parsedDate.toISOString();
                 }
             }
-            // Fallback to current date if no valid timestamp is found
             if (!timestamp) {
                 timestamp = new Date().toISOString();
             }
@@ -106,6 +116,7 @@ export function ChatPanel({
 
     const editedFilesCount = files.filter(f => f.status === 'completed' || f.status === 'generating' || f.status === 'error').length;
 
+
     return (
         <div className="flex flex-col h-full bg-white dark:bg-gray-800 rounded-lg">
             {/* Message Display Area */}
@@ -120,7 +131,7 @@ export function ChatPanel({
                         </div>
                     </div>
                 ))}
-                
+
                 {isLoading && (
                     <div className="flex items-start space-x-3">
                         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
@@ -137,7 +148,7 @@ export function ChatPanel({
             {/* Input Area */}
             <div className="p-4 border-t dark:border-gray-700">
                 <div className="bg-gray-900 text-gray-300 rounded-lg p-3 space-y-3 shadow-sm border border-gray-700">
-                    
+
                     {editedFilesCount > 0 && (
                         <div className="flex justify-between items-center text-sm px-2 py-1 bg-gray-800 rounded-md">
                             <span>Edited {editedFilesCount} files</span>
@@ -153,7 +164,7 @@ export function ChatPanel({
                             </div>
                         </div>
                     )}
-                    
+
                     <Button variant="ghost" size="sm" className="w-full text-left justify-start">@ Add Context</Button>
 
                     <Textarea
@@ -173,7 +184,7 @@ export function ChatPanel({
                                         <ChevronUp className="h-4 w-4 ml-1"/>
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-60">
+                                <PopoverContent className="w-60 z-50">
                                     <div className="grid gap-4">
                                         <div className="space-y-2">
                                             <h4 className="font-medium leading-none">Model</h4>
@@ -183,12 +194,16 @@ export function ChatPanel({
                                         </div>
                                         <Select onValueChange={onModelChange} defaultValue={selectedModel}>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select a model" />
+                                                <SelectValue>
+                                                    {`${modelDisplayNames[selectedModel]} (${modelCosts[selectedModel]} credit${modelCosts[selectedModel] > 1 ? 's' : ''})`}
+                                                </SelectValue>
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-                                                <SelectItem value="claude-3-opus-20240229">Claude 3 Opus</SelectItem>
-                                                <SelectItem value="claude-3-sonnet-20240229">Claude 3 Sonnet</SelectItem>
+                                                {Object.entries(modelDisplayNames).map(([value, name]) => (
+                                                    <SelectItem key={value} value={value}>
+                                                        {`${name} (${modelCosts[value]} credit${modelCosts[value] > 1 ? 's' : ''})`}
+                                                    </SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -201,7 +216,7 @@ export function ChatPanel({
                                         <ChevronUp className="h-4 w-4 ml-1"/>
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-80">
+                                <PopoverContent className="w-80 z-50">
                                     <div className="flex items-center space-x-2">
                                         <Switch id="auto-mode" checked={isAutoMode} onCheckedChange={onAutoModeChange} />
                                         <Label htmlFor="auto-mode" className="flex flex-col">
@@ -216,7 +231,7 @@ export function ChatPanel({
                             </Popover>
                         </div>
                         <div className="flex items-center">
-                            <Button variant="ghost" size="icon">
+                            <Button variant="ghost" size="icon" onClick={() => console.log('Attach file clicked')}>
                                 <Paperclip className="h-5 w-5" />
                             </Button>
                             {isLoading ? (
@@ -234,4 +249,4 @@ export function ChatPanel({
             </div>
         </div>
     )
-} 
+}

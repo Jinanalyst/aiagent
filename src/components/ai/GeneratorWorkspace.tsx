@@ -275,7 +275,7 @@ export function GeneratorWorkspace({ prompt: initialPrompt, model, initialProjec
             console.error("Error saving project:", error);
         }
     };
-    
+
     const handleRejectAll = () => {
         if (initialProject) {
             setFiles(initialProject.files);
@@ -290,11 +290,15 @@ export function GeneratorWorkspace({ prompt: initialPrompt, model, initialProjec
         if (abortControllerRef.current) {
             abortControllerRef.current.abort();
             addLog('Request cancelled by user.', 'INFO');
-            setIsLoading(false);
         }
     };
 
     const handleModification = async (chatInput: string) => {
+        if (!user) {
+            setMessages(prev => [...prev, { id: 'error-login', role: 'assistant', content: 'Please log in to modify a project.' }]);
+            return;
+        }
+
         setIsLoading(true);
         addLog(`Handling modification request: "${chatInput}"`, 'INFO');
     

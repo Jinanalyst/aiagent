@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 import { classifyError } from '@/lib/utils';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+});
+
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
 const planningPrompt = `
@@ -58,45 +63,41 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    const response = await openai.chat.completions.create({
-      model: model,
-      messages: [{ role: 'system', content: planningPrompt }, { role: 'user', content: prompt }],
-      response_format: { type: 'json_object' },
-      temperature: 0.1, // Lower temperature for more consistent planning
-      max_tokens: 4000, // Ensure we have enough tokens for complex plans
-    });
+    let content: string | null = null;
+
+    if (model.startsWith('gpt')) {
+      const response = await openai.chat.completions.create({
+        model: model,
+        messages: [{ role: 'system', content: planningPrompt }, { role: 'user', content: prompt }],
+        response_format: { type: 'json_object' },
+        temperature: 0.1, // Lower temperature for more consistent planning
+        max_tokens: 4000, // Ensure we have enough tokens for complex plans
+      });
+      content = response.choices[0].message.content;
+    } else if (model.startsWith('claude')) {
+      const response = await anthropic.messages.create({
+        model: model,
+        max_tokens: 4096,
+        system: planningPrompt,
+        messages: [{ role: 'user', content: prompt }],
+      });
+      const textBlock = response.content.find(block => block.type === 'text');
+      content = textBlock ? textBlock.text : null;
+    } else {
+      return NextResponse.json({ error: 'Unsupported model' }, { status: 400 });
+    }
+
+    if (!content) {
+      return NextResponse.json({ error: 'No plan generated' }, { status: 500 });
+    }
     
-    const planContent = response.choices[0].message.content;
+    // Sometimes the model might still wrap the JSON in markdown
+    const jsonMatch = content.match(/```json\n([\s\S]*?)\n```|({[\s\S]*})/);
+    const jsonString = jsonMatch ? (jsonMatch[1] || jsonMatch[2]) : content;
+
+    const result = JSON.parse(jsonString);
     
-    if (!planContent) {
-      return NextResponse.json({ 
-        error: 'No response from AI model',
-        type: 'ai_error'
-      }, { status: 500 });
-    }
-
-    let plan;
-    try {
-      plan = JSON.parse(planContent);
-    } catch (parseError) {
-      console.error('JSON parse error:', parseError);
-      return NextResponse.json({ 
-        error: 'Invalid response format from AI model',
-        type: 'ai_error',
-        details: 'The AI response could not be parsed as valid JSON'
-      }, { status: 500 });
-    }
-
-    // Validate the plan structure
-    if (!plan.project_name || !plan.files || !Array.isArray(plan.files)) {
-      return NextResponse.json({ 
-        error: 'Invalid plan structure from AI model',
-        type: 'ai_error',
-        details: 'The AI response does not contain the expected project structure'
-      }, { status: 500 });
-    }
-
-    return NextResponse.json({ plan });
+    return NextResponse.json({ plan: result });
 
   } catch (error) {
     console.error('Error generating project plan:', error);
