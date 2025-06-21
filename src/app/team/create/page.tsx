@@ -66,7 +66,7 @@ export default function CreateTeamPage() {
         id: user.walletAddress,
         email: `${user.walletAddress.slice(0, 8)}@wallet.local`,
         walletAddress: user.walletAddress,
-        role: 'owner',
+        role: 'owner' as const,
         status: 'active',
         invitedAt: new Date().toISOString()
       }],
@@ -194,7 +194,7 @@ export default function CreateTeamPage() {
             ].map((plan) => (
               <div
                 key={plan.id}
-                onClick={() => setTeamData({ ...teamData, plan: plan.id as any })}
+                onClick={() => setTeamData({ ...teamData, plan: plan.id })}
                 className={`p-4 rounded-lg border cursor-pointer transition-colors ${
                   teamData.plan === plan.id
                     ? 'border-blue-500 bg-blue-500/10'

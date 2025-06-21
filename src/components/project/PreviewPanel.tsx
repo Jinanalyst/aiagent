@@ -1,162 +1,113 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
-import { CheckCircle, RefreshCw, ExternalLink } from 'lucide-react';
-import { Button } from '../ui/button';
-
-interface FileSystem {
-    [path: string]: string;
-}
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { RefreshCw, ExternalLink } from 'lucide-react';
 
 interface PreviewPanelProps {
-    fileSystem: FileSystem;
-    onStatusUpdate: (status: string) => void;
+    files: Array<{
+        path: string;
+        content: string;
+        status?: string;
+    }>;
 }
 
-export function PreviewPanel({ fileSystem, onStatusUpdate }: PreviewPanelProps) {
-    const [isRefreshing, setIsRefreshing] = useState(false);
+export function PreviewPanel({ files }: PreviewPanelProps) {
+    const [previewKey, setPreviewKey] = useState(0);
 
-    const previewContent = useMemo(() => {
-        const files = Object.entries(fileSystem);
-        
-        // Find the main HTML file
-        let htmlFile = files.find(([path]) => 
-            path.toLowerCase().includes('index.html') || 
-            path.toLowerCase().includes('app.html') ||
-            path.toLowerCase().endsWith('.html')
-        );
-
-        if (!htmlFile) {
-            // If no HTML file, create a basic one with the React/JS content
-            const jsFiles = files.filter(([path]) => 
-                path.endsWith('.js') || path.endsWith('.jsx') || path.endsWith('.ts') || path.endsWith('.tsx')
-            );
-            
-            const cssFiles = files.filter(([path]) => path.endsWith('.css'));
-            
-            if (jsFiles.length > 0 || cssFiles.length > 0) {
-                let htmlContent = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generated Website</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <style>
-        body { margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-        * { box-sizing: border-box; }
-`;
-
-                // Add CSS content
-                cssFiles.forEach(([, content]) => {
-                    htmlContent += content + '\n';
-                });
-
-                htmlContent += `
-    </style>
-</head>
-<body>
-    <div id="root"></div>
-    <script type="text/babel">
-`;
-
-                // Add JavaScript/React content
-                jsFiles.forEach(([, content]) => {
-                    // Clean up the content for browser execution
-                    let cleanContent = content
-                        .replace(/import.*from.*['"];?\s*/g, '') // Remove imports
-                        .replace(/export\s+(default\s+)?/g, '') // Remove exports
-                        .replace(/interface\s+\w+\s*{[^}]*}/g, '') // Remove TypeScript interfaces
-                        .replace(/type\s+\w+\s*=.*?;/g, ''); // Remove type definitions
-
-                    htmlContent += cleanContent + '\n';
-                });
-
-                htmlContent += `
-        // Try to render the main component
-        const rootElement = document.getElementById('root');
-        if (typeof App !== 'undefined') {
-            ReactDOM.render(React.createElement(App), rootElement);
-        } else if (typeof HomePage !== 'undefined') {
-            ReactDOM.render(React.createElement(HomePage), rootElement);
-        } else if (typeof LandingPage !== 'undefined') {
-            ReactDOM.render(React.createElement(LandingPage), rootElement);
-        } else {
-            rootElement.innerHTML = '<h1>Website Generated Successfully</h1><p>Check the code files for the complete implementation.</p>';
-        }
-    </script>
-</body>
-</html>`;
-                
-                return htmlContent;
-            }
-        } else {
-            let htmlContent = htmlFile[1];
-            
-            // Inject CSS files into the HTML
-            const cssFiles = files.filter(([path]) => path.endsWith('.css'));
-            if (cssFiles.length > 0) {
-                const cssContent = cssFiles.map(([, content]) => `<style>${content}</style>`).join('\n');
-                htmlContent = htmlContent.replace('</head>', `${cssContent}\n</head>`);
-            }
-            
-            // Inject JS files into the HTML
-            const jsFiles = files.filter(([path]) => 
-                path.endsWith('.js') && !path.includes('node_modules')
-            );
-            if (jsFiles.length > 0) {
-                const jsContent = jsFiles.map(([, content]) => `<script>${content}</script>`).join('\n');
-                htmlContent = htmlContent.replace('</body>', `${jsContent}\n</body>`);
-            }
-            
-            return htmlContent;
-        }
-        
-        return '<div style="padding: 40px; text-align: center; color: #666;"><h2>No website files generated yet</h2><p>Generate some HTML, CSS, or JavaScript files to see the preview.</p></div>';
-    }, [fileSystem]);
-
-    const handleRefresh = () => {
-        setIsRefreshing(true);
-        onStatusUpdate('Refreshing preview...');
-        setTimeout(() => {
-            setIsRefreshing(false);
-            onStatusUpdate('Preview refreshed');
-        }, 1000);
+    const refreshPreview = () => {
+        setPreviewKey(prev => prev + 1);
     };
 
     const openInNewTab = () => {
-        const blob = new Blob([previewContent], { type: 'text/html' });
+        const htmlContent = assembleHtml();
+        const blob = new Blob([htmlContent], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
         window.open(url, '_blank');
     };
 
+    const assembleHtml = () => {
+        const htmlFile = files.find(f => f.path.endsWith('.html') || f.path === 'index.html');
+        
+        if (!htmlFile) {
+            return '<html><body><h1>No HTML file found</h1><p>Create an HTML file to see the preview.</p></body></html>';
+        }
+
+        let htmlContent = htmlFile.content;
+
+        // Inject CSS files
+        const cssFiles = files.filter(f => f.path.endsWith('.css'));
+        cssFiles.forEach(cssFile => {
+            const cssTag = `<style>${cssFile.content}</style>`;
+            if (htmlContent.includes('</head>')) {
+                htmlContent = htmlContent.replace('</head>', `${cssTag}</head>`);
+            } else {
+                htmlContent = `<head>${cssTag}</head>${htmlContent}`;
+            }
+        });
+
+        // Inject JS files
+        const jsFiles = files.filter(f => f.path.endsWith('.js') && !f.path.includes('node_modules'));
+        jsFiles.forEach(jsFile => {
+            const scriptTag = `<script>${jsFile.content}</script>`;
+            if (htmlContent.includes('</body>')) {
+                htmlContent = htmlContent.replace('</body>', `${scriptTag}</body>`);
+            } else {
+                htmlContent = `${htmlContent}${scriptTag}`;
+            }
+        });
+
+        // Handle React JSX files with basic transformation
+        const jsxFiles = files.filter(f => f.path.endsWith('.jsx') || f.path.endsWith('.tsx'));
+        if (jsxFiles.length > 0) {
+            jsxFiles.forEach(jsxFile => {
+                // Simple JSX to JS transformation (very basic)
+                const cleanContent = jsxFile.content
+                    .replace(/import.*from.*['"].*['"];?\n?/g, '') // Remove imports
+                    .replace(/export\s+default\s+/g, '') // Remove export default
+                    .replace(/export\s+/g, ''); // Remove other exports
+                
+                const scriptTag = `<script type="text/babel">${cleanContent}</script>`;
+                if (htmlContent.includes('</body>')) {
+                    htmlContent = htmlContent.replace('</body>', `${scriptTag}</body>`);
+                } else {
+                    htmlContent = `${htmlContent}${scriptTag}`;
+                }
+            });
+
+            // Add Babel standalone for JSX transformation
+            const babelScript = '<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>';
+            if (htmlContent.includes('</head>')) {
+                htmlContent = htmlContent.replace('</head>', `${babelScript}</head>`);
+            } else {
+                htmlContent = `<head>${babelScript}</head>${htmlContent}`;
+            }
+        }
+
+        return htmlContent;
+    };
+
     return (
-        <div className="h-full w-full flex flex-col bg-white dark:bg-gray-900">
-            {/* Preview Header */}
-            <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span className="text-sm font-medium">Website Preview</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Button 
-                        size="sm" 
+        <div className="h-full flex flex-col bg-white">
+            {/* Header */}
+            <div className="flex items-center justify-between p-3 border-b bg-gray-50">
+                <h3 className="font-medium text-gray-700">Preview</h3>
+                <div className="flex items-center space-x-2">
+                    <Button
                         variant="outline"
-                        onClick={handleRefresh}
-                        disabled={isRefreshing}
+                        size="sm"
+                        onClick={refreshPreview}
+                        className="h-8 px-3"
                     >
-                        <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                        Refresh
+                        <RefreshCw className="h-4 w-4" />
                     </Button>
-                    <Button 
-                        size="sm" 
+                    <Button
                         variant="outline"
+                        size="sm"
                         onClick={openInNewTab}
+                        className="h-8 px-3"
                     >
                         <ExternalLink className="h-4 w-4" />
-                        Open in New Tab
                     </Button>
                 </div>
             </div>
@@ -164,10 +115,11 @@ export function PreviewPanel({ fileSystem, onStatusUpdate }: PreviewPanelProps) 
             {/* Preview Content */}
             <div className="flex-1 bg-white">
                 <iframe
-                    srcDoc={previewContent}
-                    className="w-full h-full border-none"
-                    title="Website Preview"
-                    sandbox="allow-scripts allow-same-origin allow-forms"
+                    key={previewKey}
+                    srcDoc={assembleHtml()}
+                    className="w-full h-full border-0"
+                    sandbox="allow-scripts allow-same-origin"
+                    title="Preview"
                 />
             </div>
         </div>

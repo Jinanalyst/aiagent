@@ -37,7 +37,7 @@ const faqData: FAQItem[] = [
     id: '2',
     category: 'general',
     question: 'How do I get started?',
-    answer: 'Simply connect your Solana wallet, and you\'ll receive 5 free credits to start. You can then create a new project by describing what you want to build, and our AI will generate the code for you.'
+    answer: 'Simply connect your Solana wallet, and you&apos;ll receive 5 free credits to start. You can then create a new project by describing what you want to build, and our AI will generate the code for you.'
   },
   {
     id: '3',
@@ -85,7 +85,7 @@ const faqData: FAQItem[] = [
     id: '10',
     category: 'api',
     question: 'Do I need my own API keys?',
-    answer: 'No, you don\'t need your own API keys to get started. We provide access to AI models through our credit system. However, if you have your own OpenAI or Anthropic API keys, you can add them in Settings > Tokens for direct access.'
+    answer: 'No, you don&apos;t need your own API keys to get started. We provide access to AI models through our credit system. However, if you have your own OpenAI or Anthropic API keys, you can add them in Settings > Tokens for direct access.'
   },
   {
     id: '11',
@@ -97,7 +97,19 @@ const faqData: FAQItem[] = [
     id: '12',
     category: 'technical',
     question: 'What if the AI makes a mistake in the code?',
-    answer: 'You can simply ask the AI to fix or modify the code by describing what\'s wrong or what you want changed. The AI will update the code accordingly. You can also edit the code manually in the editor.'
+    answer: 'You can simply ask the AI to fix or modify the code by describing what&apos;s wrong or what you want changed. The AI will update the code accordingly. You can also edit the code manually in the editor.'
+  },
+  {
+    id: '13',
+    category: 'billing',
+    question: 'How do I know my payments are secure?',
+    answer: 'We don&apos;t store your payment information on our servers. All payments are processed securely through our payment partners.'
+  },
+  {
+    id: '14',
+    category: 'billing',
+    question: 'What if I&apos;m experiencing issues with my payment?',
+    answer: 'If you&apos;re experiencing issues, try refreshing the page, clearing your browser cache, or contacting our support team. We&apos;re here to help!'
   }
 ];
 

@@ -22,7 +22,7 @@ import {
   Network, 
   HardDrive,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 type SettingsSection = 
   | 'general' 
@@ -39,16 +39,16 @@ type SettingsSection =
 export default function SettingsPage() {
   const { user } = useUser();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeSection, setActiveSection] = useState<SettingsSection>('general');
 
   // Handle URL parameters for direct section navigation
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const section = urlParams.get('section') as SettingsSection;
-    if (section && settingsSections.some(s => s.id === section)) {
-      setActiveSection(section);
-    }
-  }, []);
+      useEffect(() => {
+        const section = searchParams.get('section') as SettingsSection;
+        if (section && ['general', 'appearance', 'editor', 'team', 'tokens', 'applications', 'features', 'knowledge', 'network', 'backups'].includes(section)) {
+            setActiveSection(section);
+        }
+    }, [searchParams]);
 
   const [settings, setSettings] = useState({
     // General
