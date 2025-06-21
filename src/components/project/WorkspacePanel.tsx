@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CodeEditor } from './CodeEditor';
 import { PreviewPanel } from './PreviewPanel';
@@ -16,7 +15,6 @@ interface WorkspacePanelProps {
     path: string;
     content: string;
   } | null;
-  onFileSelect?: (file: { path: string; content: string }) => void;
   activeCode?: string;
   onCodeChange?: (code: string) => void;
 }
@@ -24,7 +22,6 @@ interface WorkspacePanelProps {
 export function WorkspacePanel({ 
   files = [], 
   activeFile, 
-  onFileSelect, 
   activeCode = '', 
   onCodeChange 
 }: WorkspacePanelProps) {

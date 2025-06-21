@@ -5,7 +5,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -15,6 +14,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Upload, User, Users, CreditCard, FlaskConical, Link as LinkIcon, GitBranch, X, HelpCircle } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 
 interface WorkspaceSettingsModalProps {
   open: boolean;
@@ -34,11 +35,21 @@ export function WorkspaceSettingsModal({ open, onOpenChange }: WorkspaceSettings
   const [activeTab, setActiveTab] = useState("Workspace");
   const [workspaceName, setWorkspaceName] = useState("진진우's Lovable");
   const [workspaceDescription, setWorkspaceDescription] = useState("");
+  const [settings, setSettings] = useState({
+    name: workspaceName,
+    description: '',
+    isPublic: false,
+    allowCollaboration: true,
+  });
 
   const handleSave = () => {
     // Here you would typically call an API to save the changes
     console.log("Saving workspace settings:", { workspaceName, workspaceDescription });
     onOpenChange(false); // Close modal on save
+  };
+
+  const updateSetting = (key: string, value: unknown) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
   };
 
   return (
@@ -112,14 +123,37 @@ export function WorkspaceSettingsModal({ open, onOpenChange }: WorkspaceSettings
                          <div>
                             <label htmlFor="workspace-name" className="text-lg font-medium text-white">Workspace Name</label>
                             <p className="text-sm text-gray-400">Your full workspace name, as visible to others.</p>
-                            <Input id="workspace-name" value={workspaceName} onChange={(e) => setWorkspaceName(e.target.value)} className="mt-2 bg-gray-800 border-gray-700 text-white"/>
+                            <Input id="workspace-name" value={settings.name} onChange={(e) => updateSetting('name', e.target.value)} className="mt-2 bg-gray-800 border-gray-700 text-white"/>
                         </div>
 
                         <div>
                             <label htmlFor="workspace-description" className="text-lg font-medium text-white">Workspace Description</label>
                             <p className="text-sm text-gray-400">A short description about your workspace or team.</p>
-                            <Textarea id="workspace-description" value={workspaceDescription} onChange={(e) => setWorkspaceDescription(e.target.value)} placeholder="Description" className="mt-2 bg-gray-800 border-gray-700 text-white" />
+                            <Textarea id="workspace-description" value={settings.description} onChange={(e) => updateSetting('description', e.target.value)} placeholder="Description" className="mt-2 bg-gray-800 border-gray-700 text-white" />
                         </div>
+
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <Label>Public Workspace</Label>
+                                <p className="text-sm text-gray-500">Make this workspace visible to others</p>
+                            </div>
+                            <Switch
+                                checked={settings.isPublic}
+                                onCheckedChange={(checked) => updateSetting('isPublic', checked)}
+                            />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <Label>Allow Collaboration</Label>
+                                <p className="text-sm text-gray-500">Let others contribute to this workspace</p>
+                            </div>
+                            <Switch
+                                checked={settings.allowCollaboration}
+                                onCheckedChange={(checked) => updateSetting('allowCollaboration', checked)}
+                            />
+                        </div>
+
                         <DialogFooter>
                             <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 text-white">Save Changes</Button>
                         </DialogFooter>

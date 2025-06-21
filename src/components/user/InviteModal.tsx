@@ -1,19 +1,12 @@
 "use client";
 
 import { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Copy, Mail, Users, Plus } from 'lucide-react';
-import Image from "next/image";
 
 interface InviteModalProps {
   isOpen: boolean;
@@ -186,5 +179,5 @@ export function InviteModal({ isOpen, onClose, teamId }: InviteModalProps) {
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 } 
