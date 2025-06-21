@@ -47,7 +47,17 @@ export default function ProjectPage() {
 
     return (
         <GeneratorWorkspace
-            initialProject={project}
+            initialProject={{
+                id: project.id,
+                name: project.name,
+                files: project.files.map(file => ({
+                    id: file.id,
+                    name: file.name,
+                    content: file.content,
+                    type: file.type,
+                    status: file.status
+                }))
+            }}
         />
     )
 } 

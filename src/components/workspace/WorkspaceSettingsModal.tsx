@@ -33,8 +33,8 @@ const navItems = [
 
 export function WorkspaceSettingsModal({ open, onOpenChange }: WorkspaceSettingsModalProps) {
   const [activeTab, setActiveTab] = useState("Workspace");
-  const [workspaceName, setWorkspaceName] = useState("진진우's Lovable");
-  const [workspaceDescription, setWorkspaceDescription] = useState("");
+  const [workspaceName] = useState("진진우's Lovable");
+  const [workspaceDescription] = useState("");
   const [settings, setSettings] = useState({
     name: workspaceName,
     description: '',

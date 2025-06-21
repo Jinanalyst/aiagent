@@ -23,7 +23,7 @@ export const CodeEditor = ({ code, setCode, readOnly = false }: CodeEditorProps)
   const currentCode = typeof code === 'string' ? code : '';
   
   return (
-    <div className="relative h-full font-mono text-sm bg-[#f8f8f8] border-l">
+    <div className="relative h-full font-mono text-sm bg-[#1e1e1e] text-white">
         <div className="absolute top-2 right-4 text-xs text-gray-400 z-10">TypeScript</div>
          <Editor
             value={currentCode}
@@ -32,12 +32,13 @@ export const CodeEditor = ({ code, setCode, readOnly = false }: CodeEditorProps)
             padding={16}
             className={`code-editor ${readOnly ? 'read-only' : ''}`}
             style={{
-                fontFamily: '"Fira Mono", "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", Monaco, "Lucida Console", monospace',
+                fontFamily: '"Fira Code", "Cascadia Code", "JetBrains Mono", "SF Mono", Monaco, Consolas, monospace',
                 fontSize: 14,
-                lineHeight: 1.5,
+                lineHeight: 1.6,
                 height: '100%',
                 overflow: 'auto',
-                backgroundColor: readOnly ? '#f9f9f9' : '#f8f8f8',
+                backgroundColor: '#1e1e1e',
+                color: '#d4d4d4',
                 opacity: readOnly ? 0.8 : 1,
             }}
             readOnly={readOnly}
