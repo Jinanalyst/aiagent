@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import Editor from 'react-simple-code-editor';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-clike';
@@ -21,11 +21,25 @@ interface CodeEditorProps {
 
 export const CodeEditor = ({ code, setCode, readOnly = false }: CodeEditorProps) => {
   const currentCode = typeof code === 'string' ? code : '';
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Calculate content height based on number of lines
+  useEffect(() => {
+    if (containerRef.current) {
+      const lineCount = currentCode.split('\n').length;
+      const lineHeight = 1.6 * 14; // lineHeight * fontSize
+      const padding = 32; // 16px top + 16px bottom
+      const minHeight = Math.max(lineCount * lineHeight + padding, window.innerHeight);
+      
+      // Set CSS custom property for dynamic height
+      containerRef.current.style.setProperty('--content-height', `${minHeight}px`);
+    }
+  }, [currentCode]);
   
   return (
     <div className="relative h-full font-mono text-sm bg-[#1e1e1e] text-white overflow-hidden">
         <div className="absolute top-2 right-4 text-xs text-gray-400 z-10">TypeScript</div>
-        <div className="h-full w-full code-editor-container">
+        <div ref={containerRef} className="h-full w-full code-editor-container">
            <Editor
               value={currentCode}
               onValueChange={readOnly ? () => {} : setCode}
@@ -36,14 +50,14 @@ export const CodeEditor = ({ code, setCode, readOnly = false }: CodeEditorProps)
                   fontFamily: '"Fira Code", "Cascadia Code", "JetBrains Mono", "SF Mono", Monaco, Consolas, monospace',
                   fontSize: 14,
                   lineHeight: 1.6,
-                  height: '100%',
-                  width: '100%',
                   backgroundColor: '#1e1e1e',
                   color: '#d4d4d4',
                   opacity: readOnly ? 0.8 : 1,
                   outline: 'none',
                   border: 'none',
-                  overflow: 'auto',
+                  minHeight: '100%',
+                  width: '100%',
+                  overflow: 'visible',
               }}
               readOnly={readOnly}
               textareaClassName="code-textarea"
@@ -53,9 +67,12 @@ export const CodeEditor = ({ code, setCode, readOnly = false }: CodeEditorProps)
         <style jsx global>{`
           .code-editor-container {
             height: 100%;
-            overflow: auto;
+            width: 100%;
+            overflow-y: auto;
+            overflow-x: auto;
             scrollbar-width: thin;
             scrollbar-color: #4a5568 #1e1e1e;
+            position: relative;
           }
           
           .code-editor-container::-webkit-scrollbar {
@@ -84,21 +101,24 @@ export const CodeEditor = ({ code, setCode, readOnly = false }: CodeEditorProps)
           
           .code-editor {
             font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', Monaco, Consolas, monospace !important;
-            height: 100% !important;
+            min-height: var(--content-height, 100vh) !important;
+            width: 100% !important;
             overflow: visible !important;
+            position: relative !important;
           }
           
           .code-editor > div {
-            height: auto !important;
-            min-height: 100% !important;
+            min-height: var(--content-height, 100vh) !important;
+            width: 100% !important;
+            position: relative !important;
           }
           
           .code-textarea {
             outline: none !important;
             border: none !important;
             resize: none !important;
+            min-height: var(--content-height, 100vh) !important;
             height: auto !important;
-            min-height: calc(100vh - 120px) !important;
             background: transparent !important;
             color: #d4d4d4 !important;
             font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', Monaco, Consolas, monospace !important;
@@ -106,6 +126,10 @@ export const CodeEditor = ({ code, setCode, readOnly = false }: CodeEditorProps)
             line-height: 1.6 !important;
             padding: 16px !important;
             overflow: visible !important;
+            white-space: pre-wrap !important;
+            word-wrap: break-word !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
           }
           
           .code-textarea:focus {
@@ -113,17 +137,31 @@ export const CodeEditor = ({ code, setCode, readOnly = false }: CodeEditorProps)
             box-shadow: none !important;
           }
           
-          /* Ensure pre element (highlighted code) also scrolls properly */
+          /* Ensure pre element (highlighted code) also expands properly */
           .code-editor pre {
+            min-height: var(--content-height, 100vh) !important;
             height: auto !important;
-            min-height: calc(100vh - 120px) !important;
             margin: 0 !important;
             overflow: visible !important;
             white-space: pre-wrap !important;
             word-wrap: break-word !important;
+            padding: 16px !important;
+            box-sizing: border-box !important;
+            width: 100% !important;
+            background: transparent !important;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', Monaco, Consolas, monospace !important;
+            font-size: 14px !important;
+            line-height: 1.6 !important;
+            color: inherit !important;
           }
           
-          /* VS Code style scrollbar for the code editor */
+          /* Ensure both textarea and pre expand together */
+          .code-editor textarea,
+          .code-editor pre {
+            min-height: var(--content-height, 100vh) !important;
+          }
+          
+          /* VS Code style scrollbar variants */
           .code-editor-container::-webkit-scrollbar-track:vertical {
             background: #1e1e1e;
           }
@@ -140,6 +178,11 @@ export const CodeEditor = ({ code, setCode, readOnly = false }: CodeEditorProps)
           .code-editor-container::-webkit-scrollbar-thumb:horizontal {
             background: #3e3e42;
             min-width: 20px;
+          }
+          
+          /* Smooth scrolling */
+          .code-editor-container {
+            scroll-behavior: smooth;
           }
         `}</style>
     </div>
