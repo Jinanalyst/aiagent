@@ -1045,210 +1045,685 @@ module.exports = router;`
             } else if (initialPrompt && !initialProject) {
                 handleGenerate();
             } else if (!initialPrompt && !initialProject) {
-                // Create a default project to show something
-                const defaultFiles = [
+                // Show the actual AI-ChatGPT-Business project structure
+                const projectStructureFiles = [
+                    // Source files - Components
                     {
-                        id: 'default-html',
-                        path: 'public/index.html',
-                        content: `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to AI Code Generator</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 0;
-            padding: 40px 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .container {
-            text-align: center;
-            max-width: 600px;
-        }
-        h1 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            font-weight: 700;
-        }
-        p {
-            font-size: 1.2rem;
-            opacity: 0.9;
-            line-height: 1.6;
-        }
-        .cta {
-            margin-top: 2rem;
-            padding: 12px 24px;
-            background: rgba(255,255,255,0.2);
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 8px;
-            color: white;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .cta:hover {
-            background: rgba(255,255,255,0.3);
-            transform: translateY(-2px);
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>🚀 AI Code Generator</h1>
-        <p>Welcome to your AI-powered development workspace!</p>
-        <p>Start by typing a prompt in the chat panel to generate your first project.</p>
-        <button class="cta" onclick="alert('Use the chat panel on the right to start generating code!')">
-            Get Started
-        </button>
-    </div>
-</body>
-</html>`,
-                        status: 'completed' as const
-                    },
-                    {
-                        id: 'default-css',
-                        path: 'src/styles.css',
-                        content: `/* Global Styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+                        id: 'wallet-connect',
+                        path: 'src/components/wallet/WalletConnect.tsx',
+                        content: `"use client";
 
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    line-height: 1.6;
-    color: #333;
-}
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Wallet } from 'lucide-react';
 
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-}
+export function WalletConnect() {
+  const handleConnect = () => {
+    // Wallet connection logic
+    console.log('Connecting wallet...');
+  };
 
-/* Utility Classes */
-.text-center {
-    text-align: center;
-}
-
-.mt-4 {
-    margin-top: 2rem;
-}
-
-.btn {
-    display: inline-block;
-    padding: 12px 24px;
-    background: #007acc;
-    color: white;
-    text-decoration: none;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    transition: background 0.3s ease;
-}
-
-.btn:hover {
-    background: #005a9e;
+  return (
+    <Button onClick={handleConnect} className="flex items-center gap-2">
+      <Wallet className="h-4 w-4" />
+      Connect Wallet
+    </Button>
+  );
 }`,
                         status: 'completed' as const
                     },
                     {
-                        id: 'default-js',
-                        path: 'src/main.js',
-                        content: `// Main application logic
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 AI Code Generator initialized!');
-    
-    // Add smooth scrolling to all internal links
-    const links = document.querySelectorAll('a[href^="#"]');
-    links.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }
-        });
-    });
-    
-    // Add click handlers to buttons
-    const buttons = document.querySelectorAll('.btn');
-    buttons.forEach(button => {
-        button.addEventListener('click', function() {
-            console.log('Button clicked:', this.textContent);
-        });
-    });
+                        id: 'wallet-provider',
+                        path: 'src/components/wallet/WalletProvider.tsx',
+                        content: `"use client";
+
+import React, { createContext, useContext, useState } from 'react';
+
+interface WalletContextType {
+  isConnected: boolean;
+  address: string | null;
+  connect: () => Promise<void>;
+  disconnect: () => void;
+}
+
+const WalletContext = createContext<WalletContextType | undefined>(undefined);
+
+export function WalletProvider({ children }: { children: React.ReactNode }) {
+  const [isConnected, setIsConnected] = useState(false);
+  const [address, setAddress] = useState<string | null>(null);
+
+  const connect = async () => {
+    // Wallet connection implementation
+    setIsConnected(true);
+    setAddress('0x1234...5678');
+  };
+
+  const disconnect = () => {
+    setIsConnected(false);
+    setAddress(null);
+  };
+
+  return (
+    <WalletContext.Provider value={{ isConnected, address, connect, disconnect }}>
+      {children}
+    </WalletContext.Provider>
+  );
+}
+
+export const useWallet = () => {
+  const context = useContext(WalletContext);
+  if (!context) {
+    throw new Error('useWallet must be used within WalletProvider');
+  }
+  return context;
+};`,
+                        status: 'completed' as const
+                    },
+                    {
+                        id: 'workspace-settings',
+                        path: 'src/components/workspace/WorkspaceSettingsModal.tsx',
+                        content: `"use client";
+
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
+interface WorkspaceSettingsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function WorkspaceSettingsModal({ isOpen, onClose }: WorkspaceSettingsModalProps) {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Workspace Settings</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="name" className="text-right">
+              Name
+            </Label>
+            <Input id="name" defaultValue="AI ChatGPT Business" className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="description" className="text-right">
+              Description
+            </Label>
+            <Input id="description" defaultValue="AI-powered business application" className="col-span-3" />
+          </div>
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>Save changes</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}`,
+                        status: 'completed' as const
+                    },
+                    {
+                        id: 'theme-provider',
+                        path: 'src/components/ThemeProvider.tsx',
+                        content: `"use client";
+
+import * as React from 'react';
+import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import { type ThemeProviderProps } from 'next-themes/dist/types';
+
+export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
+  return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
+}`,
+                        status: 'completed' as const
+                    },
+                    // Hooks
+                    {
+                        id: 'use-projects',
+                        path: 'src/hooks/useProjects.tsx',
+                        content: `"use client";
+
+import { useState, useCallback } from 'react';
+
+interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  files: Array<{
+    path: string;
+    content: string;
+    status: 'pending' | 'generating' | 'completed' | 'error';
+  }>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export function useProjects() {
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  const addProject = useCallback((project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const newProject: Project = {
+      ...project,
+      id: Date.now().toString(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    setProjects(prev => [newProject, ...prev]);
+    return newProject;
+  }, []);
+
+  const updateProject = useCallback((id: string, updates: Partial<Project>) => {
+    setProjects(prev => prev.map(project => 
+      project.id === id 
+        ? { ...project, ...updates, updatedAt: new Date() }
+        : project
+    ));
+  }, []);
+
+  const deleteProject = useCallback((id: string) => {
+    setProjects(prev => prev.filter(project => project.id !== id));
+  }, []);
+
+  return {
+    projects,
+    addProject,
+    updateProject,
+    deleteProject,
+  };
+}`,
+                        status: 'completed' as const
+                    },
+                    {
+                        id: 'use-teams',
+                        path: 'src/hooks/useTeams.tsx',
+                        content: `"use client";
+
+import { useState, useCallback } from 'react';
+
+interface Team {
+  id: string;
+  name: string;
+  description?: string;
+  members: Array<{
+    id: string;
+    email: string;
+    role: 'admin' | 'member';
+    joinedAt: Date;
+  }>;
+  createdAt: Date;
+}
+
+export function useTeams() {
+  const [teams, setTeams] = useState<Team[]>([]);
+
+  const createTeam = useCallback((team: Omit<Team, 'id' | 'createdAt'>) => {
+    const newTeam: Team = {
+      ...team,
+      id: Date.now().toString(),
+      createdAt: new Date(),
+    };
+    setTeams(prev => [...prev, newTeam]);
+    return newTeam;
+  }, []);
+
+  const joinTeam = useCallback((teamId: string, user: { email: string; role: 'admin' | 'member' }) => {
+    setTeams(prev => prev.map(team => 
+      team.id === teamId 
+        ? {
+            ...team,
+            members: [...team.members, {
+              id: Date.now().toString(),
+              ...user,
+              joinedAt: new Date(),
+            }]
+          }
+        : team
+    ));
+  }, []);
+
+  return {
+    teams,
+    createTeam,
+    joinTeam,
+  };
+}`,
+                        status: 'completed' as const
+                    },
+                    {
+                        id: 'use-user',
+                        path: 'src/hooks/useUser.tsx',
+                        content: `"use client";
+
+import { useState, useCallback } from 'react';
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  avatar?: string;
+  credits: number;
+  subscription: 'free' | 'pro' | 'enterprise';
+}
+
+export function useUser() {
+  const [user, setUser] = useState<User | null>({
+    id: '1',
+    email: 'user@example.com',
+    name: 'Demo User',
+    credits: 100,
+    subscription: 'pro',
+  });
+
+  const deductCredits = useCallback((amount: number) => {
+    if (!user || user.credits < amount) {
+      return false;
+    }
+    setUser(prev => prev ? { ...prev, credits: prev.credits - amount } : null);
+    return true;
+  }, [user]);
+
+  const addCredits = useCallback((amount: number) => {
+    setUser(prev => prev ? { ...prev, credits: prev.credits + amount } : null);
+  }, []);
+
+  const updateSubscription = useCallback((subscription: User['subscription']) => {
+    setUser(prev => prev ? { ...prev, subscription } : null);
+  }, []);
+
+  return {
+    user,
+    setUser,
+    deductCredits,
+    addCredits,
+    updateSubscription,
+  };
+}`,
+                        status: 'completed' as const
+                    },
+                    // Configuration files
+                    {
+                        id: 'env-local',
+                        path: '.env.local',
+                        content: `# Environment variables for local development
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+OPENAI_API_KEY=your_openai_api_key
+ANTHROPIC_API_KEY=your_anthropic_api_key`,
+                        status: 'completed' as const
+                    },
+                    {
+                        id: 'gitignore',
+                        path: '.gitignore',
+                        content: `# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Next.js
+/.next/
+/out/
+
+# Production
+/build
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env*.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts`,
+                        status: 'completed' as const
+                    },
+                    {
+                        id: 'components-json',
+                        path: 'components.json',
+                        content: `{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "default",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "tailwind.config.ts",
+    "css": "src/app/globals.css",
+    "baseColor": "slate",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils"
+  }
+}`,
+                        status: 'completed' as const
+                    },
+                    {
+                        id: 'deployment-md',
+                        path: 'DEPLOYMENT.md',
+                        content: `# Deployment Guide
+
+## Prerequisites
+
+- Node.js 18+ installed
+- npm or yarn package manager
+- Vercel account (recommended) or other hosting platform
+
+## Environment Variables
+
+Create a \`.env.local\` file with the following variables:
+
+\`\`\`
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+OPENAI_API_KEY=your_openai_api_key
+ANTHROPIC_API_KEY=your_anthropic_api_key
+\`\`\`
+
+## Build and Deploy
+
+### Vercel (Recommended)
+
+1. Connect your GitHub repository to Vercel
+2. Add environment variables in Vercel dashboard
+3. Deploy automatically on push to main branch
+
+### Manual Deployment
+
+\`\`\`bash
+npm run build
+npm start
+\`\`\`
+
+## Features
+
+- ✅ AI-powered code generation
+- ✅ Real-time collaboration
+- ✅ Multiple AI models support
+- ✅ User authentication
+- ✅ Team management
+- ✅ Credit system`,
+                        status: 'completed' as const
+                    },
+                    {
+                        id: 'env-example',
+                        path: 'env.example',
+                        content: `# Copy this file to .env.local and fill in your values
+
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+
+# AI Services
+OPENAI_API_KEY=
+ANTHROPIC_API_KEY=
+
+# Optional
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=`,
+                        status: 'completed' as const
+                    },
+                    {
+                        id: 'eslint-config',
+                        path: 'eslint.config.mjs',
+                        content: `import { dirname } from "path";
+import { fileURLToPath } from "url";
+import { FlatCompat } from "@eslint/eslintrc";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
 });
 
-// Export functions for use in other modules
-export function showMessage(message) {
-    console.log('Message:', message);
-}
+const eslintConfig = [
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
+];
 
-export function initializeApp() {
-    console.log('App initialized!');
+export default eslintConfig;`,
+                        status: 'completed' as const
+                    },
+                    {
+                        id: 'next-env-dts',
+                        path: 'next-env.d.ts',
+                        content: `/// <reference types="next" />
+/// <reference types="next/image-types/global" />
+
+// NOTE: This file should not be edited
+// see https://nextjs.org/docs/basic-features/typescript for more information.`,
+                        status: 'completed' as const
+                    },
+                    {
+                        id: 'next-config-ts',
+                        path: 'next.config.ts',
+                        content: `import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  /* config options here */
+  experimental: {
+    serverActions: {
+      allowedOrigins: ["localhost:3000"],
+    },
+  },
+  images: {
+    domains: ["images.unsplash.com", "avatars.githubusercontent.com"],
+  },
+};
+
+export default nextConfig;`,
+                        status: 'completed' as const
+                    },
+                    {
+                        id: 'package-lock-json',
+                        path: 'package-lock.json',
+                        content: `{
+  "name": "ai-chatgpt-business",
+  "version": "0.1.0",
+  "lockfileVersion": 3,
+  "requires": true,
+  "packages": {
+    "": {
+      "name": "ai-chatgpt-business",
+      "version": "0.1.0",
+      "dependencies": {
+        "next": "15.0.3",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0"
+      }
+    }
+  }
 }`,
                         status: 'completed' as const
                     },
                     {
-                        id: 'default-readme',
-                        path: 'README.md',
-                        content: `# AI Code Generator Project
+                        id: 'package-json',
+                        path: 'package.json',
+                        content: `{
+  "name": "ai-chatgpt-business",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.24.3",
+    "@radix-ui/react-accordion": "^1.1.2",
+    "@radix-ui/react-alert-dialog": "^1.0.5",
+    "@radix-ui/react-avatar": "^1.0.4",
+    "@radix-ui/react-dialog": "^1.0.5",
+    "@radix-ui/react-dropdown-menu": "^2.0.6",
+    "@radix-ui/react-label": "^2.0.2",
+    "@radix-ui/react-popover": "^1.0.7",
+    "@radix-ui/react-select": "^2.0.0",
+    "@radix-ui/react-switch": "^1.0.3",
+    "@radix-ui/react-tabs": "^1.0.4",
+    "@radix-ui/react-toast": "^1.1.5",
+    "@radix-ui/react-tooltip": "^1.0.7",
+    "@supabase/supabase-js": "^2.39.3",
+    "ai": "^3.0.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.0",
+    "lucide-react": "^0.344.0",
+    "next": "15.0.3",
+    "next-themes": "^0.2.1",
+    "openai": "^4.28.0",
+    "prismjs": "^1.29.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-simple-code-editor": "^0.13.1",
+    "tailwind-merge": "^2.2.1",
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.17",
+    "@types/prismjs": "^1.26.3",
+    "@types/react": "^18.2.55",
+    "@types/react-dom": "^18.2.19",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "15.0.3",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.3.3"
+  }
+}`,
+                        status: 'completed' as const
+                    },
+                    {
+                        id: 'postcss-config',
+                        path: 'postcss.config.mjs',
+                        content: `/** @type {import('postcss-load-config').Config} */
+const config = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
 
-Welcome to your AI-generated project! This is a basic web application structure that you can customize and expand.
+export default config;`,
+                        status: 'completed' as const
+                    },
+                    {
+                        id: 'readme-md',
+                        path: 'README.md',
+                        content: `# AI ChatGPT Business
+
+An AI-powered business application built with Next.js, featuring advanced code generation, team collaboration, and multiple AI model support.
+
+## Features
+
+- 🤖 **AI Code Generation**: Generate complete applications with natural language
+- 👥 **Team Collaboration**: Work together on projects in real-time
+- 🔧 **Multiple AI Models**: Support for GPT-4, Claude, and more
+- 💳 **Credit System**: Flexible usage-based pricing
+- 🔐 **Authentication**: Secure user management with Supabase
+- 📊 **Analytics**: Track usage and project metrics
+- 🎨 **Modern UI**: Beautiful interface built with Tailwind CSS
+
+## Getting Started
+
+1. Clone the repository
+2. Install dependencies: \`npm install\`
+3. Copy \`env.example\` to \`.env.local\` and fill in your API keys
+4. Run the development server: \`npm run dev\`
+5. Open [http://localhost:3000](http://localhost:3000)
+
+## Tech Stack
+
+- **Framework**: Next.js 15 with App Router
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
+- **AI Services**: OpenAI GPT-4, Anthropic Claude
+- **Deployment**: Vercel
+- **TypeScript**: Full type safety
 
 ## Project Structure
 
 \`\`\`
-├── public/
-│   └── index.html          # Main HTML file
 ├── src/
-│   ├── styles.css         # CSS styles
-│   └── main.js            # JavaScript logic
-└── README.md              # This file
+│   ├── app/                 # App Router pages
+│   ├── components/          # Reusable components
+│   │   ├── ai/             # AI-related components
+│   │   ├── project/        # Project management
+│   │   ├── ui/             # Base UI components
+│   │   ├── user/           # User management
+│   │   ├── wallet/         # Wallet integration
+│   │   └── workspace/      # Workspace features
+│   ├── hooks/              # Custom React hooks
+│   ├── lib/                # Utility functions
+│   └── types/              # TypeScript definitions
+├── public/                 # Static assets
+└── docs/                   # Documentation
 \`\`\`
 
-## Getting Started
+## Contributing
 
-1. Open \`public/index.html\` in your web browser
-2. Customize the styles in \`src/styles.css\`
-3. Add your JavaScript logic to \`src/main.js\`
-4. Use the chat panel to ask for modifications and enhancements
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
 
-## Features
+## License
 
-- 🎨 Modern CSS styling
-- 📱 Responsive design
-- ⚡ Interactive JavaScript
-- 🚀 Ready for deployment
-
-## Next Steps
-
-Try asking the AI to:
-- "Add a contact form"
-- "Create a navigation menu"
-- "Add animations to the buttons"
-- "Make the design more colorful"
-
-Happy coding! 🎉`,
+MIT License - see LICENSE file for details`,
+                        status: 'completed' as const
+                    },
+                    {
+                        id: 'tsconfig-json',
+                        path: 'tsconfig.json',
+                        content: `{
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}`,
                         status: 'completed' as const
                     }
                 ];
                 
-                setFiles(defaultFiles);
-                setActiveFile({ path: defaultFiles[0].path, content: defaultFiles[0].content });
-                setActiveCode(defaultFiles[0].content);
+                setFiles(projectStructureFiles);
+                setActiveFile({ path: projectStructureFiles[0].path, content: projectStructureFiles[0].content });
+                setActiveCode(projectStructureFiles[0].content);
             }
         }
         
@@ -1317,4 +1792,4 @@ Happy coding! 🎉`,
             />
         </>
     );
-} 
+}
