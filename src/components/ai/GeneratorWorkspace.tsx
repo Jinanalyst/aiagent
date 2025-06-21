@@ -10,13 +10,6 @@ import { useProjects } from '@/hooks/useProjects';
 import { UpgradeModal } from '@/components/user/UpgradeModal';
 import { ProfileSidebar } from "@/components/ui/profile-sidebar";
 
-interface Message {
-    id: string;
-    role: 'user' | 'assistant';
-    content: string;
-    createdAt: Date;
-}
-
 interface FilePlan {
     path: string;
     content: string;
@@ -43,7 +36,7 @@ export function GeneratorWorkspace({ prompt: initialPrompt, initialProject }: Ge
     const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
     const effectRan = useRef(false);
 
-    const createPlan = async (prompt: string) => {
+    const createPlan = useCallback(async (prompt: string) => {
         if (!user) return;
 
         setIsGenerating(true);
@@ -94,7 +87,7 @@ export function GeneratorWorkspace({ prompt: initialPrompt, initialProject }: Ge
         } finally {
             setIsGenerating(false);
         }
-    };
+    }, [user, addProject]);
 
     const handleGenerate = useCallback(async () => {
         if (!user) {
@@ -112,7 +105,7 @@ export function GeneratorWorkspace({ prompt: initialPrompt, initialProject }: Ge
         if (initialPrompt) {
             createPlan(initialPrompt);
         }
-    }, [user, deductCredits, initialPrompt]);
+    }, [user, deductCredits, initialPrompt, createPlan]);
     
     useEffect(() => {
         if (effectRan.current === false) {

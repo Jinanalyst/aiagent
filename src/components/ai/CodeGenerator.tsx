@@ -70,8 +70,8 @@ export function CodeGenerator({ initialPrompt = "", initialModel = 'gpt-4o' }: C
       } else {
         setGeneratedCode(`Error: ${data.error}`);
       }
-    } catch (err) {
-      console.error('Generation failed:', err);
+    } catch {
+      console.error('Generation failed');
       setGeneratedCode("Error: Failed to generate code. Please try again.");
     } finally {
       setLoading(false);
