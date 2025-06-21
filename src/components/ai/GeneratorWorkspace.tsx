@@ -496,9 +496,8 @@ export function GeneratorWorkspace({ prompt: initialPrompt, model, initialProjec
                                 files={files}
                                 activeFile={activeFile}
                                 onFileSelect={setActiveFile}
-                                code={activeCode}
-                                setCode={setCodeForActiveFile}
-                                logs={logs}
+                                activeCode={activeCode}
+                                onCodeChange={setCodeForActiveFile}
                             />
                         </div>
                     </ResizablePanel>
