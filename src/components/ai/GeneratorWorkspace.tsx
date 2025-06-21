@@ -80,7 +80,7 @@ export function GeneratorWorkspace({ prompt: initialPrompt, initialProject }: Ge
             let plan: ProjectPlan;
             
             // Check if it's a Bitcoin business landing page request
-            if (prompt.toLowerCase().includes('bitcoin') && prompt.toLowerCase().includes('landing')) {
+            if (prompt.toLowerCase().includes('bitcoin') && (prompt.toLowerCase().includes('landing') || prompt.toLowerCase().includes('business'))) {
                 plan = {
                     name: "Bitcoin Business Landing Page",
                     files: [
@@ -558,6 +558,163 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     ]
                 };
+            } else if (prompt.toLowerCase().includes('react') || prompt.toLowerCase().includes('component')) {
+                // React project structure
+                plan = {
+                    name: "React Application",
+                    files: [
+                        {
+                            path: 'src/App.tsx',
+                            content: `import React from 'react';
+import './App.css';
+
+function App() {
+  return (
+    <div className="App">
+      <header className="App-header">
+        <h1>Welcome to React</h1>
+        <p>This is your new React application!</p>
+      </header>
+    </div>
+  );
+}
+
+export default App;`
+                        },
+                        {
+                            path: 'src/App.css',
+                            content: `.App {
+  text-align: center;
+}
+
+.App-header {
+  background-color: #282c34;
+  padding: 20px;
+  color: white;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+p {
+  font-size: 1.2rem;
+  opacity: 0.9;
+}`
+                        },
+                        {
+                            path: 'src/index.tsx',
+                            content: `import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+
+const root = ReactDOM.createRoot(
+  document.getElementById('root') as HTMLElement
+);
+
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);`
+                        },
+                        {
+                            path: 'public/index.html',
+                            content: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React App</title>
+</head>
+<body>
+    <div id="root"></div>
+</body>
+</html>`
+                        }
+                    ]
+                };
+            } else if (prompt.toLowerCase().includes('api') || prompt.toLowerCase().includes('server') || prompt.toLowerCase().includes('backend')) {
+                // Node.js API project structure
+                plan = {
+                    name: "Node.js API Server",
+                    files: [
+                        {
+                            path: 'src/server.js',
+                            content: `const express = require('express');
+const cors = require('cors');
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Routes
+app.get('/', (req, res) => {
+  res.json({ message: 'Welcome to your API server!' });
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(\`Server running on port \${PORT}\`);
+});`
+                        },
+                        {
+                            path: 'package.json',
+                            content: `{
+  "name": "api-server",
+  "version": "1.0.0",
+  "description": "Node.js API server",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}`
+                        },
+                        {
+                            path: 'src/routes/api.js',
+                            content: `const express = require('express');
+const router = express.Router();
+
+// GET /api/users
+router.get('/users', (req, res) => {
+  res.json([
+    { id: 1, name: 'John Doe', email: 'john@example.com' },
+    { id: 2, name: 'Jane Smith', email: 'jane@example.com' }
+  ]);
+});
+
+// POST /api/users
+router.post('/users', (req, res) => {
+  const { name, email } = req.body;
+  const newUser = { id: Date.now(), name, email };
+  res.status(201).json(newUser);
+});
+
+module.exports = router;`
+                        }
+                    ]
+                };
             } else {
                 // Default simple project for other prompts
                 plan = {
@@ -857,12 +1014,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Handle existing project
                 const projectFiles = initialProject.files.map((file, index) => {
                     let filePath: string;
-                    if ('name' in file && file.name) {
-                        filePath = file.name;
-                    } else if ('path' in file && file.path) {
-                        filePath = file.path;
+                    
+                    // Determine the file path with better fallback logic
+                    if ('name' in file && file.name && file.name.trim()) {
+                        filePath = file.name.trim();
+                    } else if ('path' in file && file.path && file.path.trim()) {
+                        filePath = file.path.trim();
                     } else {
-                        filePath = `untitled-${index}.txt`;
+                        // Create a meaningful fallback based on content or index
+                        const extension = file.content && file.content.includes('<!DOCTYPE html') ? '.html' :
+                                        file.content && file.content.includes('body {') ? '.css' :
+                                        file.content && (file.content.includes('function') || file.content.includes('console.log')) ? '.js' : '.txt';
+                        filePath = `file-${index + 1}${extension}`;
                     }
                     
                     return {
@@ -871,7 +1034,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         content: file.content || '',
                         status: 'status' in file ? file.status as 'pending' | 'generating' | 'completed' | 'error' : 'completed' as const
                     };
-                }).filter(file => file.path); // Filter out any files that still don't have valid paths
+                }).filter(file => file.path && file.path.trim()); // Filter out any files that still don't have valid paths
                 
                 setFiles(projectFiles);
                 
@@ -886,7 +1049,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const defaultFiles = [
                     {
                         id: 'default-html',
-                        path: 'index.html',
+                        path: 'public/index.html',
                         content: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -947,6 +1110,138 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
 </body>
 </html>`,
+                        status: 'completed' as const
+                    },
+                    {
+                        id: 'default-css',
+                        path: 'src/styles.css',
+                        content: `/* Global Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Utility Classes */
+.text-center {
+    text-align: center;
+}
+
+.mt-4 {
+    margin-top: 2rem;
+}
+
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+    background: #007acc;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.btn:hover {
+    background: #005a9e;
+}`,
+                        status: 'completed' as const
+                    },
+                    {
+                        id: 'default-js',
+                        path: 'src/main.js',
+                        content: `// Main application logic
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 AI Code Generator initialized!');
+    
+    // Add smooth scrolling to all internal links
+    const links = document.querySelectorAll('a[href^="#"]');
+    links.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+    
+    // Add click handlers to buttons
+    const buttons = document.querySelectorAll('.btn');
+    buttons.forEach(button => {
+        button.addEventListener('click', function() {
+            console.log('Button clicked:', this.textContent);
+        });
+    });
+});
+
+// Export functions for use in other modules
+export function showMessage(message) {
+    console.log('Message:', message);
+}
+
+export function initializeApp() {
+    console.log('App initialized!');
+}`,
+                        status: 'completed' as const
+                    },
+                    {
+                        id: 'default-readme',
+                        path: 'README.md',
+                        content: `# AI Code Generator Project
+
+Welcome to your AI-generated project! This is a basic web application structure that you can customize and expand.
+
+## Project Structure
+
+\`\`\`
+├── public/
+│   └── index.html          # Main HTML file
+├── src/
+│   ├── styles.css         # CSS styles
+│   └── main.js            # JavaScript logic
+└── README.md              # This file
+\`\`\`
+
+## Getting Started
+
+1. Open \`public/index.html\` in your web browser
+2. Customize the styles in \`src/styles.css\`
+3. Add your JavaScript logic to \`src/main.js\`
+4. Use the chat panel to ask for modifications and enhancements
+
+## Features
+
+- 🎨 Modern CSS styling
+- 📱 Responsive design
+- ⚡ Interactive JavaScript
+- 🚀 Ready for deployment
+
+## Next Steps
+
+Try asking the AI to:
+- "Add a contact form"
+- "Create a navigation menu"
+- "Add animations to the buttons"
+- "Make the design more colorful"
+
+Happy coding! 🎉`,
                         status: 'completed' as const
                     }
                 ];

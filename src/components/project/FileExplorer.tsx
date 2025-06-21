@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronRight, ChevronDown, File, Folder, FolderOpen } from 'lucide-react';
 
 interface FileExplorerProps {
@@ -23,7 +23,31 @@ interface FileNode {
 }
 
 export function FileExplorer({ files, onFileSelect, activeFile }: FileExplorerProps) {
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['.']));
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['.', 'src', 'public', 'components']));
+
+  // Auto-expand folders when files change
+  useEffect(() => {
+    const foldersToExpand = new Set(expandedFolders);
+    
+    files.forEach(file => {
+      if (file.path && file.path.includes('/')) {
+        const pathParts = file.path.split('/');
+        // Auto-expand first level folders
+        if (pathParts.length > 1) {
+          foldersToExpand.add(pathParts[0]);
+        }
+        // Auto-expand common development folders
+        const commonFolders = ['src', 'public', 'components', 'pages', 'styles', 'assets', 'lib', 'utils'];
+        commonFolders.forEach(folder => {
+          if (file.path.includes(folder + '/')) {
+            foldersToExpand.add(folder);
+          }
+        });
+      }
+    });
+    
+    setExpandedFolders(foldersToExpand);
+  }, [files]);
 
   // Build file tree structure
   const buildFileTree = (files: Array<{ path: string; content: string }>) => {
