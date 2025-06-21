@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { format, isToday, isYesterday, isThisWeek, isThisMonth } from 'date-fns';
 import { Project } from '@/types';
+import { ReferralModal } from '@/components/user/ReferralModal';
 
 interface ProfileSidebarProps {
   className?: string;
@@ -33,6 +34,7 @@ export function ProfileSidebar({ className = '' }: ProfileSidebarProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [isHovered, setIsHovered] = useState(false);
+  const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
 
   const filteredProjects = projects.filter(project =>
     project.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -189,7 +191,10 @@ export function ProfileSidebar({ className = '' }: ProfileSidebarProps) {
               <Button
                 variant="ghost"
                 className="w-full justify-start text-green-400 hover:text-green-300 hover:bg-gray-800"
-                onClick={() => router.push('/pricing')}
+                onClick={() => {
+                  setIsReferralModalOpen(true);
+                  setIsHovered(false);
+                }}
               >
                 <Coins className="h-4 w-4 mr-3" />
                 Get free tokens
@@ -261,6 +266,12 @@ export function ProfileSidebar({ className = '' }: ProfileSidebarProps) {
           </div>
         )}
       </div>
+      
+      {/* Referral Modal */}
+      <ReferralModal 
+        isOpen={isReferralModalOpen} 
+        onClose={() => setIsReferralModalOpen(false)} 
+      />
     </div>
   );
 } 
