@@ -16,7 +16,7 @@ import { useUser } from '@/hooks/useUser';
 import { UpgradeModal } from './UpgradeModal';
 
 export function UserNav() {
-  const { user, logout } = useUser();
+  const { user, setUser } = useUser();
   const router = useRouter();
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
 
@@ -37,7 +37,7 @@ export function UserNav() {
   };
 
   const handleLogout = () => {
-    logout();
+    setUser(null);
     router.push('/');
   };
 

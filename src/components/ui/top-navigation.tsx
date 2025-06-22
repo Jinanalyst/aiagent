@@ -325,14 +325,7 @@ NODE_ENV=development
       onAIAction();
     }
     
-    const actions = [
-      'Focus on chat input',
-      'Suggest improvements',
-      'Optimize code',
-      'Add features',
-      'Fix bugs'
-    ];
-    
+    // Focus on chat input and provide helpful suggestions
     const chatInput = document.querySelector('textarea');
     if (chatInput) {
       chatInput.focus();

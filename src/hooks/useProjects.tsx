@@ -48,8 +48,27 @@ export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
     const newProject: Project = {
       ...projectData,
       id: `proj_${new Date().getTime()}`,
-      createdAt: new Date().toISOString(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
       userId: user.walletAddress,
+      type: 'website',
+      description: '',
+      files: projectData.files.map(file => ({
+        id: `file_${Date.now()}_${Math.random()}`,
+        name: file.path,
+        content: file.content,
+        type: file.path.endsWith('.tsx') ? 'tsx' : 
+              file.path.endsWith('.ts') ? 'ts' :
+              file.path.endsWith('.jsx') ? 'jsx' :
+              file.path.endsWith('.js') ? 'js' :
+              file.path.endsWith('.css') ? 'css' :
+              file.path.endsWith('.html') ? 'html' :
+              file.path.endsWith('.json') ? 'json' :
+              file.path.endsWith('.md') ? 'md' : 'js',
+        status: 'completed',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }))
     };
 
     const allProjects = JSON.parse(localStorage.getItem('projects') || '{}');
@@ -81,10 +100,7 @@ export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
       const updatedProject = {
         ...updatedProjects[projectIndex],
         ...updates,
-        labs: { // Ensure labs object exists
-            ...updatedProjects[projectIndex].labs,
-            ...updates.labs,
-        }
+        updatedAt: new Date()
       };
       updatedProjects[projectIndex] = updatedProject;
 

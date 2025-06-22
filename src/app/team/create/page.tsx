@@ -45,10 +45,14 @@ export default function CreateTeamPage() {
   const { user } = useUser();
   const router = useRouter();
   const [step, setStep] = useState<'create' | 'invite' | 'success'>('create');
-  const [teamData, setTeamData] = useState({
+  const [teamData, setTeamData] = useState<{
+    name: string;
+    description: string;
+    plan: 'free' | 'pro' | 'enterprise';
+  }>({
     name: '',
     description: '',
-    plan: 'free' as const
+    plan: 'free'
   });
   const [inviteEmails, setInviteEmails] = useState(['']);
   const [createdTeam, setCreatedTeam] = useState<Team | null>(null);
@@ -188,9 +192,9 @@ export default function CreateTeamPage() {
           <label className="block text-sm font-medium text-white mb-4">Team plan</label>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { id: 'free', name: 'Free', price: '$0', members: '3 members', credits: '50 shared credits' },
-              { id: 'pro', name: 'Pro', price: '$20/month', members: '10 members', credits: '500 shared credits' },
-              { id: 'enterprise', name: 'Enterprise', price: '$100/month', members: '50 members', credits: '2000 shared credits' }
+              { id: 'free' as const, name: 'Free', price: '$0', members: '3 members', credits: '50 shared credits' },
+              { id: 'pro' as const, name: 'Pro', price: '$20/month', members: '10 members', credits: '500 shared credits' },
+              { id: 'enterprise' as const, name: 'Enterprise', price: '$100/month', members: '50 members', credits: '2000 shared credits' }
             ].map((plan) => (
               <div
                 key={plan.id}
