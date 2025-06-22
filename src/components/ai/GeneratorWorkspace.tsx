@@ -7,6 +7,7 @@ import { WorkspacePanel } from '@/components/project/WorkspacePanel';
 import { ChatPanel } from '@/components/project/ChatPanel';
 import { ChangeManager } from '@/components/project/ChangeManager';
 import { ChangesPopup } from '@/components/project/ChangesPopup';
+import { ProjectHeader } from '@/components/project/ProjectHeader';
 import { useUser } from '@/hooks/useUser';
 import { useProjects } from '@/hooks/useProjects';
 import { UpgradeModal } from '@/components/user/UpgradeModal';
@@ -76,6 +77,7 @@ export function GeneratorWorkspace({ prompt: initialPrompt, initialProject }: Ge
     const [originalFiles, setOriginalFiles] = useState<Map<string, string>>(new Map());
     const [currentGeneratingFile, setCurrentGeneratingFile] = useState<string>('');
     const [generationProgress, setGenerationProgress] = useState(0);
+    const [isPreviewMode, setIsPreviewMode] = useState(false);
 
     const addLog = (message: string) => {
         const timestamp = new Date().toLocaleTimeString();
@@ -1254,6 +1256,41 @@ aiEnhancement.init();`;
         }
     };
 
+    const handleTogglePreview = () => {
+        setIsPreviewMode(!isPreviewMode);
+    };
+
+    const handleRefresh = () => {
+        // Refresh the preview if in preview mode, otherwise reload
+        if (isPreviewMode) {
+            // Force re-render of preview
+            setIsPreviewMode(false);
+            setTimeout(() => setIsPreviewMode(true), 100);
+        } else {
+            window.location.reload();
+        }
+    };
+
+    const handleOpenInNewTab = () => {
+        // Create a blob URL for the current HTML content
+        if (activeFile && activeFile.path.endsWith('.html')) {
+            const blob = new Blob([activeFile.content], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        }
+    };
+
+    // Get project name from initial project or default
+    const projectName = 'initialProject' in (initialProject || {}) && initialProject?.name 
+        ? (initialProject as any).name 
+        : 'Untitled Project';
+
+    // Convert files array to Record format for deployment
+    const projectFiles = files.reduce((acc, file) => {
+        acc[file.path] = file.content;
+        return acc;
+    }, {} as Record<string, string>);
+
 
     
     useEffect(() => {
@@ -2022,13 +2059,22 @@ MIT License - see LICENSE file for details`,
     return (
         <>
             <ProfileSidebar />
-            <div className="flex h-screen bg-gray-50">
+            <div className="flex h-screen bg-gray-50 flex-col">
+                <ProjectHeader
+                    projectName={projectName}
+                    isPreviewMode={isPreviewMode}
+                    onTogglePreview={handleTogglePreview}
+                    onRefresh={handleRefresh}
+                    onOpenInNewTab={handleOpenInNewTab}
+                    projectFiles={projectFiles}
+                />
                 <div className="flex-1 flex">
                     <div className="flex-1 border-r border-gray-200 min-h-0">
                         <WorkspacePanel 
                             files={files}
                             activeFile={activeFile}
                             onCodeChange={handleCodeChange}
+                            isPreviewMode={isPreviewMode}
                         />
                     </div>
                     <div className="w-96 min-h-0">

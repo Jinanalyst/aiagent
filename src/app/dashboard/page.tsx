@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Zap, Code2 } from "lucide-react";
 import Link from "next/link";
 import { useProjects } from "@/hooks/useProjects";
 import { Project } from "@/types";
@@ -44,6 +44,42 @@ export default function DashboardPage() {
                             </Button>
                         </Link>
                     </header>
+
+                    {/* Featured Tool */}
+                    <div className="mb-8">
+                        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Zap className="h-6 w-6" />
+                                        <h2 className="text-2xl font-bold">AI Code Generator</h2>
+                                        <span className="bg-white/20 px-2 py-1 rounded-full text-xs font-medium">UPDATED</span>
+                                    </div>
+                                    <p className="text-blue-100 mb-4">
+                                        Chat with AI to generate complete web applications. Modern bolt.new-style interface with live code editor, preview, and one-click deployment.
+                                    </p>
+                                    <div className="flex gap-2 text-sm text-blue-100">
+                                        <span className="flex items-center gap-1">
+                                            <Code2 className="h-4 w-4" />
+                                            Chat-based generation
+                                        </span>
+                                        <span>•</span>
+                                        <span>Live code editor</span>
+                                        <span>•</span>
+                                        <span>Instant deployment</span>
+                                    </div>
+                                </div>
+                                <div className="flex-shrink-0">
+                                    <Link href="/generate">
+                                        <Button variant="secondary" className="bg-white text-blue-600 hover:bg-blue-50">
+                                            <Zap className="mr-2 h-4 w-4" />
+                                            Start Building
+                                        </Button>
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <main>
                         {loading ? (

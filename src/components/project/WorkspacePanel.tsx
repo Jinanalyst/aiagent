@@ -20,6 +20,7 @@ interface WorkspacePanelProps {
     content: string;
   } | null;
   onCodeChange?: (code: string) => void;
+  isPreviewMode?: boolean;
 }
 
 interface OpenTab {
@@ -32,9 +33,10 @@ interface OpenTab {
 export function WorkspacePanel({ 
   files = [], 
   activeFile, 
-  onCodeChange 
+  onCodeChange,
+  isPreviewMode = false
 }: WorkspacePanelProps) {
-  const [activeTab, setActiveTab] = useState('code');
+  const activeTab = isPreviewMode ? 'preview' : 'code';
   const [openTabs, setOpenTabs] = useState<OpenTab[]>([]);
   const [activeTabId, setActiveTabId] = useState<string>('');
   const [showTerminal, setShowTerminal] = useState(false);
@@ -117,12 +119,12 @@ export function WorkspacePanel({
   return (
     <div className="h-full flex flex-col bg-[#1e1e1e] text-white">
       {/* Top Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+      <Tabs value={activeTab} className="flex-1 flex flex-col">
         <TabsList className="grid w-full grid-cols-2 bg-[#2d2d30] border-b border-[#3e3e42]">
-          <TabsTrigger value="code" className="data-[state=active]:bg-[#1e1e1e] text-white">
+          <TabsTrigger value="code" className="data-[state=active]:bg-[#1e1e1e] text-white" disabled>
             Code
           </TabsTrigger>
-          <TabsTrigger value="preview" className="data-[state=active]:bg-[#1e1e1e] text-white">
+          <TabsTrigger value="preview" className="data-[state=active]:bg-[#1e1e1e] text-white" disabled>
             Preview
           </TabsTrigger>
         </TabsList>
