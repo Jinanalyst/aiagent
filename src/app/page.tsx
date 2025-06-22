@@ -1,6 +1,6 @@
 "use client";
 
-import { Hero } from "@/components/ui/animated-hero";
+import { DesignAgency } from "@/components/ui/landing-page";
 import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -19,9 +19,5 @@ export default function Page() {
     }
   }, [searchParams]);
 
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4 md:p-24">
-      <Hero />
-    </main>
-  );
+  return <DesignAgency />;
 }
