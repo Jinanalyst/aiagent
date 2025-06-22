@@ -75,6 +75,12 @@
   }
 }
 
+@layer utilities {
+  .border-border {
+    border-color: hsl(var(--border));
+  }
+}
+
 /* Custom scrollbar for code editor wrapper */
 .code-editor-wrapper {
   scrollbar-width: thin;
