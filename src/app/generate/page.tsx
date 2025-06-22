@@ -4,21 +4,19 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { 
   Send, 
   Code2, 
   Eye, 
-  Rocket, 
   Loader2, 
   User, 
   Bot,
   Download,
-  ExternalLink,
-  Zap
+  ExternalLink
 } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 import { DeploymentModal } from '@/components/project/DeploymentModal';
+import { TopNavigation } from '@/components/ui/top-navigation';
 
 interface Message {
   id: string;
@@ -406,30 +404,37 @@ export default Dashboard;`
 
   return (
     <div className="h-screen bg-[#0a0a0a] text-white flex flex-col">
-      {/* Top Header */}
-      <div className="border-b border-gray-800 px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Zap className="h-5 w-5 text-blue-500" />
-          <span className="font-semibold">AI Code Generator</span>
-        </div>
-        <div className="flex items-center gap-3">
-          {user && (
-            <Badge variant="outline" className="text-xs">
-              {user.credits} credits
-            </Badge>
-          )}
-          <Button
-            onClick={() => setIsDeployModalOpen(true)}
-            disabled={!currentProject}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            <Rocket className="mr-2 h-4 w-4" />
-            Deploy
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex-1 flex">
+      {/* Fixed Top Navigation */}
+      <TopNavigation
+        projectTitle={currentProject ? currentProject.name : "AI Code Generator"}
+        subtitle={currentProject ? currentProject.description : "Describe what you want to build"}
+        onDeploy={() => setIsDeployModalOpen(true)}
+        onAIAction={() => {
+          // Enhanced AI action - focus chat input and add suggestion
+          const chatInput = document.querySelector('textarea');
+          if (chatInput) {
+            chatInput.focus();
+            if (currentProject) {
+              // Suggest project improvements if there's a current project
+              setInputValue(`Improve this ${currentProject.name} by adding `);
+            }
+          }
+        }}
+        userCredits={user?.credits}
+        isDeployEnabled={!!currentProject}
+        showBackButton={true}
+        projectFiles={currentProject ? 
+          currentProject.files.reduce((acc, file) => {
+            acc[file.path] = file.content;
+            return acc;
+          }, {} as Record<string, string>) 
+          : {}
+        }
+        projectName={currentProject?.name || "My Project"}
+      />
+      
+            {/* Content with top padding for fixed header */}
+      <div className="pt-14 flex-1 flex">{/* pt-14 accounts for the 56px (h-14) header height */}
         {/* Left Chat Panel */}
         <div className="w-80 border-r border-gray-800 flex flex-col">
           <div className="p-4 border-b border-gray-800">
